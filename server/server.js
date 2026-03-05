@@ -9,7 +9,56 @@ const jwt = require('jsonwebtoken');
 const connectDB = require('./db');
 const User = require('./models/User');
 const Post = require('./models/Post');
+const BannedIp = require('./models/BannedIp');
 require('dotenv').config();
+
+// Middleware para verificar se o utilizador ou IP está banido
+const checkBan = async (req, res, next) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+    try {
+        // Verificar IP na blacklist
+        const isIpBanned = await BannedIp.findOne({ ip });
+        if (isIpBanned) {
+            return res.status(403).json({
+                success: false,
+                message: 'Acesso negado: Este IP foi banido permanentemente da rede Tywaky.'
+            });
+        }
+
+        // Se estiver autenticado, verificar se o user está banido
+        const authHeader = req.headers.authorization;
+        if (authHeader) {
+            const token = authHeader.split(' ')[1];
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+                const user = await User.findById(decoded.id);
+
+                if (user && user.isBanned) {
+                    if (user.banExpires && new Date() > user.banExpires) {
+                        // Ban expirou, libertar automaticamente
+                        user.isBanned = false;
+                        user.banExpires = null;
+                        await user.save();
+                    } else {
+                        const timeLeft = user.banExpires
+                            ? `Expira em: ${new Date(user.banExpires).toLocaleString()}`
+                            : 'Banimento permanente.';
+                        return res.status(403).json({
+                            success: false,
+                            message: `A tua conta está suspensa. ${timeLeft}`
+                        });
+                    }
+                }
+            } catch (err) {
+                // Token inválido, ignoramos e deixamos passar (o middleware de auth tratará se necessário)
+            }
+        }
+        next();
+    } catch (err) {
+        next();
+    }
+};
 
 // Middleware para verificar se o utilizador é administrador
 const isAdmin = (req, res, next) => {
@@ -49,6 +98,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(bodyParser.json({ limit: '50mb' }));
+app.use(checkBan); // Aplicar verificação de banimento em todos os requests
 
 // Helper para ler/escrever dados (Legado - Mantido apenas para referência durante migração se necessário)
 // const readData = async () => ...
@@ -132,6 +182,70 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
         res.json({ success: true, users });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Erro ao listar utilizadores' });
+    }
+});
+
+// Banir utilizador por tempo (Dias)
+app.post('/api/admin/ban/user', isAdmin, async (req, res) => {
+    try {
+        const { userId, days } = req.body;
+        const expires = new Date();
+        expires.setDate(expires.getDate() + parseInt(days));
+
+        await User.findByIdAndUpdate(userId, {
+            isBanned: true,
+            banExpires: expires
+        });
+
+        res.json({ success: true, message: `Utilizador banido por ${days} dias.` });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Erro ao banir utilizador' });
+    }
+});
+
+// Banimento ILIMITADO (IP + User)
+app.post('/api/admin/ban/ip', isAdmin, async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: 'Utilizador não encontrado' });
+
+        // Banir conta permanentemente
+        user.isBanned = true;
+        user.banExpires = null; // null = permanente
+        await user.save();
+
+        // Banir IP se disponível
+        if (user.registrationIp) {
+            await BannedIp.findOneAndUpdate(
+                { ip: user.registrationIp },
+                { ip: user.registrationIp, bannedBy: req.adminUser.id },
+                { upsert: true }
+            );
+        }
+
+        res.json({ success: true, message: 'Banimento total (IP e Conta) aplicado com sucesso.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Erro ao aplicar banimento de IP' });
+    }
+});
+
+// Desbanir
+app.post('/api/admin/unban/:userId', isAdmin, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findByIdAndUpdate(userId, {
+            isBanned: false,
+            banExpires: null
+        });
+
+        if (user && user.registrationIp) {
+            await BannedIp.deleteOne({ ip: user.registrationIp });
+        }
+
+        res.json({ success: true, message: 'Utilizador e IP libertados com sucesso.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Erro ao desbanir' });
     }
 });
 

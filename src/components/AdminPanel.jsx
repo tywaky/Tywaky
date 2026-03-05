@@ -38,6 +38,47 @@ const AdminPanel = ({ currentUser }) => {
         }
     };
 
+    const handleBanUser = async (userId, userName) => {
+        const days = window.prompt(`Banir ${userName} por quantos dias?`, '7');
+        if (days && !isNaN(days)) {
+            try {
+                const res = await apiClient.post('/admin/ban/user', { userId, days });
+                if (res.success) {
+                    setMessage({ type: 'success', text: `${userName} banido por ${days} dias.` });
+                    fetchUsers();
+                }
+            } catch (err) {
+                setMessage({ type: 'error', text: 'Erro ao banir utilizador.' });
+            }
+        }
+    };
+
+    const handleBanIp = async (userId, userName) => {
+        if (window.confirm(`⚠️ AÇÃO DRÁSTICA: Deseja banir PERMANENTEMENTE a conta e o IP de ${userName}?`)) {
+            try {
+                const res = await apiClient.post('/admin/ban/ip', { userId });
+                if (res.success) {
+                    setMessage({ type: 'success', text: `${userName} e o seu IP foram banidos permanentemente.` });
+                    fetchUsers();
+                }
+            } catch (err) {
+                setMessage({ type: 'error', text: 'Erro ao aplicar banimento de IP.' });
+            }
+        }
+    };
+
+    const handleUnban = async (userId, userName) => {
+        try {
+            const res = await apiClient.post(`/admin/unban/${userId}`);
+            if (res.success) {
+                setMessage({ type: 'success', text: `${userName} foi libertado.` });
+                fetchUsers();
+            }
+        } catch (err) {
+            setMessage({ type: 'error', text: 'Erro ao desbanir.' });
+        }
+    };
+
     // Identificar IPs duplicados para destaque
     const ipCounts = users.reduce((acc, user) => {
         const ip = user.registrationIp;
@@ -61,7 +102,8 @@ const AdminPanel = ({ currentUser }) => {
                     borderRadius: '8px',
                     marginBottom: '1.5rem',
                     backgroundColor: message.type === 'success' ? 'rgba(74, 222, 128, 0.2)' : 'rgba(248, 113, 113, 0.2)',
-                    border: `1px solid ${message.type === 'success' ? '#4ade80' : '#f87171'}`
+                    border: `1px solid ${message.type === 'success' ? '#4ade80' : '#f87171'}`,
+                    color: message.type === 'success' ? '#4ade80' : '#f87171'
                 }}>
                     {message.text}
                 </div>
@@ -85,17 +127,18 @@ const AdminPanel = ({ currentUser }) => {
                             <th style={{ padding: '1rem' }}>Utilizador</th>
                             <th style={{ padding: '1rem' }}>Email</th>
                             <th style={{ padding: '1rem' }}>IP de Registo</th>
-                            <th style={{ padding: '1rem' }}>Data</th>
-                            <th style={{ padding: '1rem' }}>Ações</th>
+                            <th style={{ padding: '1rem' }}>Estado</th>
+                            <th style={{ padding: '1rem' }}>Ações de Moderação</th>
                         </tr>
                     </thead>
                     <tbody>
                         {users.map((u) => {
                             const isDuplicate = u.registrationIp && ipCounts[u.registrationIp] > 1;
+                            const isBanned = u.isBanned;
                             return (
                                 <tr key={u._id} style={{
                                     borderBottom: '1px solid rgba(255,255,255,0.05)',
-                                    backgroundColor: isDuplicate ? 'rgba(251, 191, 36, 0.03)' : 'transparent'
+                                    backgroundColor: isBanned ? 'rgba(248, 113, 113, 0.05)' : (isDuplicate ? 'rgba(251, 191, 36, 0.03)' : 'transparent')
                                 }}>
                                     <td style={{ padding: '1rem' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
@@ -133,28 +176,30 @@ const AdminPanel = ({ currentUser }) => {
                                             )}
                                         </span>
                                     </td>
-                                    <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                        {new Date(u.createdAt).toLocaleDateString()}
+                                    <td style={{ padding: '1rem' }}>
+                                        {isBanned ? (
+                                            <span style={{ color: '#f87171', fontSize: '0.8rem', fontWeight: 600 }}>
+                                                🚫 BANIDO {u.banExpires ? `(Até ${new Date(u.banExpires).toLocaleDateString()})` : '(IP e Conta)'}
+                                            </span>
+                                        ) : (
+                                            <span style={{ color: '#4ade80', fontSize: '0.8rem', fontWeight: 600 }}>✅ ATIVO</span>
+                                        )}
                                     </td>
                                     <td style={{ padding: '1rem' }}>
                                         {u.email !== currentUser.email ? (
-                                            <button
-                                                onClick={() => handleDeleteUser(u._id, u.name)}
-                                                className="btn-danger-small"
-                                                style={{
-                                                    background: 'rgba(248, 113, 113, 0.2)',
-                                                    border: '1px solid #f87171',
-                                                    color: '#f87171',
-                                                    padding: '0.4rem 0.8rem',
-                                                    borderRadius: '6px',
-                                                    cursor: 'pointer',
-                                                    fontSize: '0.8rem'
-                                                }}
-                                            >
-                                                Eliminar
-                                            </button>
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                {isBanned ? (
+                                                    <button onClick={() => handleUnban(u._id, u.name)} className="btn-success-small" style={{ background: 'rgba(74, 222, 128, 0.2)', border: '1px solid #4ade80', color: '#4ade80', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Libertar</button>
+                                                ) : (
+                                                    <>
+                                                        <button onClick={() => handleBanUser(u._id, u.name)} style={{ background: 'rgba(251, 191, 36, 0.2)', border: '1px solid #fbbf24', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Banir Tempo</button>
+                                                        <button onClick={() => handleBanIp(u._id, u.name)} style={{ background: 'rgba(248, 113, 113, 0.2)', border: '1px solid #f87171', color: '#f87171', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>BANIR IP</button>
+                                                    </>
+                                                )}
+                                                <button onClick={() => handleDeleteUser(u._id, u.name)} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Eliminar</button>
+                                            </div>
                                         ) : (
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--primary)' }}>Admin (Tu)</span>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--primary)' }}>Administrador</span>
                                         )}
                                     </td>
                                 </tr>

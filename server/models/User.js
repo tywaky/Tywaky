@@ -11,6 +11,8 @@ const userSchema = new mongoose.Schema({
     following: { type: Number, default: 0 },
     followingIds: [{ type: String }], // Keeping as string to match current ID format if migrating
     isAdmin: { type: Boolean, default: false },
+    isBanned: { type: Boolean, default: false },
+    banExpires: { type: Date, default: null },
     registrationIp: { type: String, default: "" },
     avatarUrl: { type: String, default: "" },
     bannerUrl: { type: String, default: "" }
