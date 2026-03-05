@@ -100,3 +100,27 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* Messaging System Extensions */
+.conversations-sidebar .conversation-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  transform: translateX(5px);
+}
+
+.conversations-sidebar .conversation-item.active {
+  background: rgba(79, 70, 229, 0.15) !important;
+  border-left: 3px solid var(--accent);
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
