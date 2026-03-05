@@ -41,8 +41,9 @@ const Trending = ({ handleViewProfile, allUsers = [], currentUser }) => {
                                     style={{
                                         width: '40px',
                                         height: '40px',
-                                        backgroundImage: sug.avatarUrl ? `url(${sug.avatarUrl})` : '',
-                                        backgroundColor: 'var(--primary)'
+                                        backgroundImage: sug.avatarUrl ? `url(${sug.avatarUrl})` : 'linear-gradient(45deg, var(--primary), var(--accent))',
+                                        backgroundColor: 'var(--primary)',
+                                        borderRadius: '8px'
                                     }}
                                 ></div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
