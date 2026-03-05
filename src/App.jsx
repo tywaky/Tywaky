@@ -376,12 +376,13 @@ function App() {
   const deletePost = async () => {
     const { postId } = confirmModal
     try {
-      await apiClient.delete(`/posts/${postId}`)
-      // FIX: Use both _id and id for the filter
-      setPosts(posts.filter(p => String(p._id || p.id) !== String(postId)))
+      await apiClient.delete(`/posts/${postId}`, { userId: user._id || user.id })
+      setPosts(prevPosts => prevPosts.filter(p => String(p._id || p.id) !== String(postId)))
       setConfirmModal({ isOpen: false, postId: null })
+      // Pequeno feedback visual opcional ou apenas fechar o modal
     } catch (err) {
       console.error('Erro ao eliminar post:', err)
+      alert('Erro ao eliminar a publicação. Estás a usar a versão mais recente?')
     }
   }
 
