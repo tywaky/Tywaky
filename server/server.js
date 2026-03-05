@@ -292,13 +292,7 @@ app.delete('/api/posts/:id/comments/:commentId', async (req, res) => {
     }
 });
 
-// Servir Frontend em Produção
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../dist')));
-    app.get('*', (req, res) => {
-        res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
-    });
-}
+// O frontend será servido pela Vercel separadamente
 
 app.listen(PORT, () => {
     console.log(`🚀 Tywaky Backend a correr na porta ${PORT}`);
