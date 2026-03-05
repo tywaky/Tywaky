@@ -1,24 +1,23 @@
-```javascript
 import React from 'react';
 
 const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser }) => {
     // Lista de contactos: pessoas que o utilizador segue ou seguidores
-    const contacts = allUsers.filter(u => 
-        u._id !== (currentUser?._id || currentUser?.id) && 
+    const contacts = allUsers.filter(u =>
+        u._id !== (currentUser?._id || currentUser?.id) &&
         (currentUser?.followingIds?.includes(String(u._id)) || (u.followersIds && u.followersIds.includes(String(currentUser?._id || currentUser?.id))))
     );
 
     return (
-        <aside className="right-sidebar" style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
+        <aside className="right-sidebar" style={{
+            display: 'flex',
+            flexDirection: 'column',
             paddingTop: '30vh' // Alinha com o "quadrado vermelho" do desenho
         }}>
-            
+
             {/* Espaço para Publicidade (Lugar reservado) */}
-            <div style={{ 
-                padding: '1.5rem', 
-                opacity: 0.1, 
+            <div style={{
+                padding: '1.5rem',
+                opacity: 0.1,
                 marginBottom: '1rem',
                 textAlign: 'center',
                 fontSize: '0.8rem'
@@ -27,17 +26,17 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser
             </div>
 
             {/* A Box de Contactos (Seguidores) - FOCO PRINCIPAL */}
-            <div className="contacts-box glass" style={{ 
-                margin: '0 1rem', 
-                borderRadius: '16px', 
+            <div className="contacts-box glass" style={{
+                margin: '0 1rem',
+                borderRadius: '16px',
                 overflow: 'hidden',
                 background: 'rgba(30, 41, 59, 0.5)',
                 border: '1px solid var(--glass-border)',
                 flexShrink: 0
             }}>
-                <div style={{ 
-                    padding: '0.8rem 1rem', 
-                    borderBottom: '1px solid var(--glass-border)', 
+                <div style={{
+                    padding: '0.8rem 1rem',
+                    borderBottom: '1px solid var(--glass-border)',
                     background: 'rgba(255,255,255,0.02)',
                     display: 'flex',
                     alignItems: 'center',
@@ -48,9 +47,9 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser
                     </h3>
                 </div>
 
-                <div className="contacts-list" style={{ 
-                    padding: '0.4rem', 
-                    overflowY: 'auto', 
+                <div className="contacts-list" style={{
+                    padding: '0.4rem',
+                    overflowY: 'auto',
                     maxHeight: '220px' // Mais curta verticalmente como pedido
                 }}>
                     {contacts.length === 0 ? (
@@ -59,7 +58,7 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser
                         </p>
                     ) : (
                         contacts.map(contact => (
-                            <div 
+                            <div
                                 key={contact._id}
                                 className="contact-item"
                                 onClick={() => {
@@ -76,13 +75,13 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser
                                     transition: '0.2s'
                                 }}
                             >
-                                <div 
-                                    className="avatar-mini-circle" 
+                                <div
+                                    className="avatar-mini-circle"
                                     style={{
                                         width: '28px',
                                         height: '28px',
                                         borderRadius: '50%',
-                                        backgroundImage: contact.avatarUrl ? `url(${ contact.avatarUrl })` : '',
+                                        backgroundImage: contact.avatarUrl ? `url(${contact.avatarUrl})` : '',
                                         backgroundColor: 'var(--primary)',
                                         backgroundSize: 'cover',
                                         flexShrink: 0,
@@ -119,4 +118,3 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser
 };
 
 export default RightSidebar;
-```
