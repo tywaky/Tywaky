@@ -7,6 +7,7 @@ import Post from './components/Post'
 import PostEditor from './components/PostEditor'
 import ProfileView from './components/ProfileView'
 import Modals from './components/Modals'
+import AdminPanel from './components/AdminPanel'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)

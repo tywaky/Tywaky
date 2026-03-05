@@ -34,6 +34,18 @@ const Sidebar = ({ currentView, setCurrentView, user, handleLogout, setViewedPro
                 >
                     <span>👤</span> Perfil
                 </button>
+                {user?.isAdmin && (
+                    <button
+                        onClick={() => {
+                            setViewedProfile(null);
+                            setCurrentView('admin');
+                        }}
+                        className={`nav-link ${currentView === 'admin' ? 'active' : ''}`}
+                        style={{ color: '#fbbf24' }}
+                    >
+                        <span>🛡️</span> Painel Admin
+                    </button>
+                )}
             </nav>
 
             <div style={{ marginTop: 'auto', padding: '1rem', borderTop: '1px solid var(--glass-border)' }}>

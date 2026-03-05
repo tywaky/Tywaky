@@ -11,6 +11,27 @@ const User = require('./models/User');
 const Post = require('./models/Post');
 require('dotenv').config();
 
+// Middleware para verificar se o utilizador é administrador
+const isAdmin = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ success: false, message: 'Não autorizado' });
+
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        // No futuro, podemos verificar no DB, mas por agora confiamos no token decodificado 
+        // ou verificamos o email especificamente para segurança extra nesta fase
+        if (decoded.isAdmin || decoded.email === 'joaosilvagfx@gmail.com') {
+            req.adminUser = decoded;
+            next();
+        } else {
+            res.status(403).json({ success: false, message: 'Acesso negado: Apenas administradores' });
+        }
+    } catch (err) {
+        res.status(401).json({ success: false, message: 'Token inválido' });
+    }
+};
+
 // Conectar ao MongoDB
 connectDB();
 
@@ -46,52 +67,87 @@ app.post('/api/auth/login', async (req, res) => {
         if (user && await bcrypt.compare(password, user.password)) {
             const { password: _, ...userWithoutPassword } = user.toObject();
             const token = jwt.sign(
-                { id: user._id, email: user.email },
+                { id: user._id, email: user.email, isAdmin: user.isAdmin },
                 process.env.JWT_SECRET || 'fallback_secret',
-                { expiresIn: '24h' }
-            );
-            res.json({ success: true, user: userWithoutPassword, token });
+                { expiresIn: '7d' }
+            )
+            res.json({ success: true, user: { ...userWithoutPassword, isAdmin: user.isAdmin }, token })
         } else {
-            res.status(401).json({ success: false, message: 'Credenciais inválidas' });
+            res.status(401).json({ success: false, message: 'Credenciais inválidas' })
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        res.status(500).json({ success: false, message: 'Erro no servidor' })
     }
-});
+})
 
 app.post('/api/auth/register', async (req, res) => {
-    const newUser = req.body;
     try {
-        if (await User.findOne({ email: newUser.email })) {
-            return res.status(400).json({ success: false, message: 'Email já registado' });
-        }
+        const { email, handle, name, password } = req.body;
 
-        if (await User.findOne({ handle: newUser.handle })) {
-            return res.status(400).json({ success: false, message: 'Handle já está em uso' });
-        }
+        // Verificar se já existe
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) return res.status(400).json({ success: false, message: 'Email já registado' });
 
-        const hashedPassword = await bcrypt.hash(newUser.password, SALT_ROUNDS);
-        const user = new User({
-            ...newUser,
+        const existingHandle = await User.findOne({ handle });
+        if (existingHandle) return res.status(400).json({ success: false, message: 'Handle já está em uso' });
+
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+        // Capturar IP (considerando proxies como Render/Vercel)
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+        const newUser = new User({
+            name,
+            email,
             password: hashedPassword,
+            handle,
+            registrationIp: ip,
+            isAdmin: email === 'joaosilvagfx@gmail.com', // Primeira conta admin automática
             followers: 0,
             following: 0,
             bio: "Olá, estou no Tywaky!",
             avatarUrl: ""
         });
 
-        await user.save();
-        const { password: _, ...userWithoutPassword } = user.toObject();
+        await newUser.save();
 
+        const { password: _, ...userWithoutPassword } = newUser.toObject();
         const token = jwt.sign(
-            { id: user._id, email: user.email },
+            { id: newUser._id, email: newUser.email, isAdmin: newUser.isAdmin },
             process.env.JWT_SECRET || 'fallback_secret',
-            { expiresIn: '24h' }
-        );
+            { expiresIn: '7d' }
+        )
 
-        res.json({ success: true, user: userWithoutPassword, token });
+        res.status(201).json({ success: true, user: { ...userWithoutPassword, isAdmin: newUser.isAdmin }, token });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.error('Erro no registo:', error);
+        res.status(500).json({ success: false, message: 'Erro ao criar conta' });
+    }
+});
+
+// Administrativo
+app.get('/api/admin/users', isAdmin, async (req, res) => {
+    try {
+        const users = await User.find({}, '-password').sort({ createdAt: -1 });
+        res.json({ success: true, users });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Erro ao listar utilizadores' });
+    }
+});
+
+app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Não permitir que o admin se apague a si próprio por engano
+        if (id === req.adminUser.id) {
+            return res.status(400).json({ success: false, message: 'Não pode apagar a sua própria conta de administrador' });
+        }
+
+        await User.findByIdAndDelete(id);
+        await Post.deleteMany({ userId: id });
+        res.json({ success: true, message: 'Utilizador e as suas publicações eliminados com sucesso' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Erro ao eliminar utilizador' });
     }
 });
 

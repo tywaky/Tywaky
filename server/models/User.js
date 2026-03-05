@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
     followers: { type: Number, default: 0 },
     following: { type: Number, default: 0 },
     followingIds: [{ type: String }], // Keeping as string to match current ID format if migrating
+    isAdmin: { type: Boolean, default: false },
+    registrationIp: { type: String, default: "" },
     avatarUrl: { type: String, default: "" },
     bannerUrl: { type: String, default: "" }
 }, { timestamps: true });
