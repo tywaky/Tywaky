@@ -15,10 +15,15 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, handleViewProfile
                 </h3>
             </div>
 
-            <div className="contacts-list" style={{ padding: '0.5rem', overflowY: 'auto', flex: 1 }}>
+            <div className="contacts-list" style={{
+                padding: '0.5rem',
+                overflowY: 'auto',
+                maxHeight: '300px', // Limitar a altura vertical
+                borderBottom: '1px solid var(--glass-border)'
+            }}>
                 {contacts.length === 0 ? (
-                    <p style={{ textAlign: 'center', opacity: 0.5, fontSize: '0.8rem', marginTop: '2rem' }}>
-                        Segue alguém para começar a conversar!
+                    <p style={{ textAlign: 'center', opacity: 0.5, fontSize: '0.8rem', marginTop: '1rem' }}>
+                        Segue alguém para conversar!
                     </p>
                 ) : (
                     contacts.map(contact => (
@@ -74,6 +79,13 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, handleViewProfile
                         </div>
                     ))
                 )}
+            </div>
+
+            {/* Espaço reservado para Publicidade / Patrocínios / Notícias */}
+            <div style={{ flex: 1, padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', opacity: 0.2 }}>
+                <div style={{ border: '1px dashed var(--text-muted)', width: '100%', height: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', textAlign: 'center' }}>Espaço para Publicidade e Notícias</span>
+                </div>
             </div>
 
             <div style={{ padding: '1rem', borderTop: '1px solid var(--glass-border)', fontSize: '0.75rem', opacity: 0.5, textAlign: 'center' }}>
