@@ -247,14 +247,41 @@ A salvaguarda repousa pelo uso de dupla autenticação nos requests: a retençã
 
 ---
 
-## 🌍 Estrutura Final do Ecossistema (Tywaky v3.0)
+---
 
-A rede social opera agora num modelo de **Cloud Distribuída**:
+## 🌊 Fase 14: Fluidity & Governance (v3.1)
+
+### 2026-03-05
+
+### 14.1 Sincronização em Tempo Real (Auto-Sync)
+
+- **O Motor de Fluidos:** Implementado um sistema de *polling* inteligente em `App.jsx` que refresca todos os dados (posts, users, likes) a cada **15 segundos**.
+- **User Experience:** A rede social agora é "viva". Mudanças de perfil ou novos posts aparecem automaticamente em todos os ecrãs sem necessidade de refresh manual.
+
+### 14.2 Moderação Avançada & Shield
+
+- **Identificação de IPs:** Adicionado rastreio de IP de registo para detetar contas duplicadas e prevenir abusos.
+- **Painel de Controlo:** Interface administrativa completa para:
+  - Banir/Desbanir Contas (Temporário ou Permanente).
+  - Banir IPs (Blacklist Global).
+  - **Sincronização Forçada:** Ferramenta de diagnóstico para recalcular estatísticas e limpar seguidores "fantasmas" em toda a base de dados.
+
+### 14.3 Unificação de Identidade (ID Fix)
+
+- **MongoDB Standard:** Migração total da lógica interna para usar o padrão de ID do MongoDB (`_id`).
+- **Correção de Identidade:** Resolvido o conflito onde perfis de utilizadores diferentes (ex: João vs Andry) se misturavam devido a IDs de teste antigos.
+- **Persistência de Media:** Corrigido o erro de gravação de Fotos/Banners através da exclusão técnica do campo `_id` nas atualizações, permitindo personalização total sem erros de base de dados.
+
+---
+
+## 🌍 Estrutura Final do Ecossistema (Tywaky v3.1)
+
+A rede social opera agora num modelo de **Cloud Distribuída e Automática**:
 
 1. **Camada de Dados (MongoDB Atlas):** Onde residem os utilizadores, posts, likes e seguidores.
 2. **Motor Lógico (Render):** O servidor processa a autenticação (JWT/Bcrypt) e serve os dados via API Rest.
 3. **Interface Visual (Vercel):** O site "bebe" os dados do servidor e oferece a experiência Glassmorphism fluida ao utilizador final.
-4. **Cérebro de Atualização (GitHub):** Onde o código está guardado e de onde os serviços de nuvem retiram as atualizações.
+4. **Cérebro de Auto-Sincronização:** O frontend mantém-se em constante diálogo com o servidor, garantindo que a rede nunca está "parada".
 
 ---
-*Documento atualizado em 2026-03-05 19:25:00*
+*Documento atualizado em 2026-03-05 21:35:00*
