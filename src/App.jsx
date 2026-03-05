@@ -50,6 +50,16 @@ function App() {
         const usersData = await apiClient.get('/users');
         setAllUsers(usersData);
 
+        // Refresh current user data to ensure _id is present
+        if (savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          const currentUserData = usersData.find(u => u.handle === parsedUser.handle || u.email === parsedUser.email);
+          if (currentUserData) {
+            setUser(currentUserData);
+            localStorage.setItem('tywaky_user', JSON.stringify(currentUserData));
+          }
+        }
+
         const FallbackPosts = [];
 
         const rawPosts = (Array.isArray(postsData) && postsData.length > 0 ? postsData : FallbackPosts);
@@ -553,7 +563,7 @@ function App() {
 
                   {/* Bio Ticker */}
                   <div className="ticker-mini">
-                    <div className="ticker-label">LATEST BIO</div>
+                    <div className="ticker-label">TYWAKY PRO</div>
                     <div className="ticker-content">
                       {user.bio} &nbsp;&bull;&nbsp; {user.bio} &nbsp;&bull;&nbsp; {user.bio}
                     </div>
