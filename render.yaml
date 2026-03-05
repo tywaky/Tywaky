@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: tywaky-backend
+    runtime: node
+    plan: free
+    region: frankfurt # Or close to user
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: MONGODB_URI
+        placeholder: "Cole aqui o seu link do MongoDB Atlas"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: "*"
