@@ -38,11 +38,12 @@ const AdminPanel = ({ currentUser }) => {
         }
     };
 
-    // Agrupar utilizadores por IP
-    const usersByIp = users.reduce((acc, user) => {
-        const ip = user.registrationIp || 'Desconhecido';
-        if (!acc[ip]) acc[ip] = [];
-        acc[ip].push(user);
+    // Identificar IPs duplicados para destaque
+    const ipCounts = users.reduce((acc, user) => {
+        const ip = user.registrationIp;
+        if (ip) {
+            acc[ip] = (acc[ip] || 0) + 1;
+        }
         return acc;
     }, {});
 
@@ -72,8 +73,8 @@ const AdminPanel = ({ currentUser }) => {
                     <h3 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{users.length}</h3>
                 </div>
                 <div className="stat-card glass" style={{ padding: '1.5rem', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>IPs Únicos</span>
-                    <h3 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{Object.keys(usersByIp).length}</h3>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>IPs Detetados</span>
+                    <h3 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{Object.keys(ipCounts).length}</h3>
                 </div>
             </div>
 
@@ -89,70 +90,76 @@ const AdminPanel = ({ currentUser }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {Object.entries(usersByIp).map(([ip, ipUsers]) => (
-                            <React.Fragment key={ip}>
-                                {ipUsers.map((u, idx) => (
-                                    <tr key={u._id} style={{
-                                        borderBottom: '1px solid rgba(255,255,255,0.05)',
-                                        backgroundColor: ipUsers.length > 1 ? 'rgba(255, 255, 255, 0.03)' : 'transparent'
-                                    }}>
-                                        <td style={{ padding: '1rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                                                <div className="avatar-mini-circle" style={{
-                                                    width: '32px',
-                                                    height: '32px',
-                                                    borderRadius: '50%',
-                                                    backgroundImage: u.avatarUrl ? `url(${u.avatarUrl})` : '',
-                                                    backgroundColor: 'var(--primary)',
-                                                    backgroundSize: 'cover'
-                                                }}></div>
-                                                <div>
-                                                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{u.name}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.handle}</div>
-                                                </div>
+                        {users.map((u) => {
+                            const isDuplicate = u.registrationIp && ipCounts[u.registrationIp] > 1;
+                            return (
+                                <tr key={u._id} style={{
+                                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                    backgroundColor: isDuplicate ? 'rgba(251, 191, 36, 0.03)' : 'transparent'
+                                }}>
+                                    <td style={{ padding: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                            <div className="avatar-mini-circle" style={{
+                                                width: '32px',
+                                                height: '32px',
+                                                borderRadius: '50%',
+                                                backgroundImage: u.avatarUrl ? `url(${u.avatarUrl})` : '',
+                                                backgroundColor: 'var(--primary)',
+                                                backgroundSize: 'cover'
+                                            }}></div>
+                                            <div>
+                                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{u.name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.handle}</div>
                                             </div>
-                                        </td>
-                                        <td style={{ padding: '1rem', fontSize: '0.9rem' }}>{u.email}</td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <span style={{
-                                                fontSize: '0.85rem',
-                                                fontFamily: 'monospace',
-                                                color: ipUsers.length > 1 ? '#fbbf24' : 'inherit'
-                                            }}>
-                                                {u.registrationIp || 'N/A'}
-                                                {ipUsers.length > 1 && idx === 0 && (
-                                                    <div style={{ fontSize: '0.7rem', color: '#fbbf24' }}>⚠️ IP duplicado ({ipUsers.length} contas)</div>
-                                                )}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                            {new Date(u.createdAt).toLocaleDateString()}
-                                        </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            {u.email !== currentUser.email ? (
-                                                <button
-                                                    onClick={() => handleDeleteUser(u._id, u.name)}
-                                                    className="btn-danger-small"
-                                                    style={{
-                                                        background: 'rgba(248, 113, 113, 0.2)',
-                                                        border: '1px solid #f87171',
-                                                        color: '#f87171',
-                                                        padding: '0.4rem 0.8rem',
-                                                        borderRadius: '6px',
-                                                        cursor: 'pointer',
-                                                        fontSize: '0.8rem'
-                                                    }}
-                                                >
-                                                    Eliminar
-                                                </button>
-                                            ) : (
-                                                <span style={{ fontSize: '0.8rem', color: 'var(--primary)' }}>Admin (Tu)</span>
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '1rem', fontSize: '0.9rem' }}>{u.email}</td>
+                                    <td style={{ padding: '1rem' }}>
+                                        <span style={{
+                                            fontSize: '0.85rem',
+                                            fontFamily: 'monospace',
+                                            color: isDuplicate ? '#fbbf24' : (u.registrationIp ? 'inherit' : '#64748b')
+                                        }}>
+                                            {u.registrationIp || 'Pré-Implementação'}
+                                            {isDuplicate && (
+                                                <div style={{ fontSize: '0.65rem', color: '#fbbf24', marginTop: '4px' }}>
+                                                    ⚠️ IP Partilhado ({ipCounts[u.registrationIp]} contas)
+                                                </div>
                                             )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </React.Fragment>
-                        ))}
+                                            {!u.registrationIp && (
+                                                <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: '4px' }}>
+                                                    Conta anterior ao rastreio
+                                                </div>
+                                            )}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                        {new Date(u.createdAt).toLocaleDateString()}
+                                    </td>
+                                    <td style={{ padding: '1rem' }}>
+                                        {u.email !== currentUser.email ? (
+                                            <button
+                                                onClick={() => handleDeleteUser(u._id, u.name)}
+                                                className="btn-danger-small"
+                                                style={{
+                                                    background: 'rgba(248, 113, 113, 0.2)',
+                                                    border: '1px solid #f87171',
+                                                    color: '#f87171',
+                                                    padding: '0.4rem 0.8rem',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.8rem'
+                                                }}
+                                            >
+                                                Eliminar
+                                            </button>
+                                        ) : (
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--primary)' }}>Admin (Tu)</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
