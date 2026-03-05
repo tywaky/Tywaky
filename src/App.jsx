@@ -1,0 +1,685 @@
+import { useState, useEffect } from 'react'
+import './App.css'
+import { apiClient } from './services/api'
+import Sidebar from './components/Sidebar'
+import Trending from './components/Trending'
+import Post from './components/Post'
+import PostEditor from './components/PostEditor'
+import ProfileView from './components/ProfileView'
+import Modals from './components/Modals'
+
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [authMode, setAuthMode] = useState('login')
+  const [user, setUser] = useState(null)
+  const [currentView, setCurrentView] = useState('feed')
+  const [newPostContent, setNewPostContent] = useState('')
+  const [newPostImage, setNewPostImage] = useState(null)
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [editData, setEditData] = useState({ name: '', bio: '', avatarUrl: '', bannerUrl: '' })
+  const [posts, setPosts] = useState([])
+  const [visiblePosts, setVisiblePosts] = useState(6)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [activeMenuPostId, setActiveMenuPostId] = useState(null)
+  const [editingPost, setEditingPost] = useState(null)
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, postId: null })
+  const [commentModal, setCommentModal] = useState({ isOpen: false, postId: null, content: '' })
+  const [viewedProfile, setViewedProfile] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [allUsers, setAllUsers] = useState([])
+  const [authData, setAuthData] = useState({ name: '', handle: '', email: '', password: '', confirmPassword: '' })
+  const [authErrors, setAuthErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Load Initial Data
+  useEffect(() => {
+    const initializeApp = async () => {
+      // User Session
+      const savedUser = localStorage.getItem('tywaky_user');
+      const savedToken = localStorage.getItem('tywaky_token');
+      if (savedUser && savedToken) {
+        setUser(JSON.parse(savedUser));
+        setIsLoggedIn(true);
+      }
+
+      // Posts
+      try {
+        const postsData = await apiClient.get('/posts');
+        const usersData = await apiClient.get('/users');
+        setAllUsers(usersData);
+
+        const FallbackPosts = [
+          { id: 1, user: 'Ana Martins', handle: '@ana_m', content: 'Acabei de lançar o meu novo projeto usando esta plataforma! A experiência é incrível. ✨', likes: 124, liked: false, comments: 12, time: '2h', imageUrl: '', isPinned: false },
+          { id: 2, user: 'Carlos Tech', handle: '@carlostech', content: 'Alguém mais está a explorar as novas APIs de Web3? Estou impressionado com a facilidade de integração.', likes: 89, liked: false, comments: 45, time: '4h', imageUrl: '', isPinned: false },
+          { id: 3, user: 'Mariana Silva', handle: '@mariana_s', content: 'Bom dia mundo! Que o vosso código seja limpo e os vossos deploys sem bugs. ☕🚀', likes: 256, liked: true, comments: 18, time: '6h', imageUrl: '', isPinned: false }
+        ];
+
+        const rawPosts = (postsData.length > 0 ? postsData : FallbackPosts);
+
+        // Enrich posts with user data if missing
+        const enrichedPosts = rawPosts.map(post => {
+          if (!post.user && post.userId) {
+            const postUser = usersData.find(u => u.id === post.userId);
+            if (postUser) {
+              return {
+                ...post,
+                user: postUser.name,
+                handle: postUser.handle,
+                avatar: postUser.avatarUrl
+              };
+            }
+          }
+          return post;
+        }).sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+
+        setPosts(enrichedPosts);
+      } catch (error) {
+        console.error('Falha ao carregar dados:', error);
+      }
+    };
+
+    initializeApp();
+    setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 1500);
+
+    const handleClickOutside = () => setActiveMenuPostId(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [])
+
+  const validateField = (name, value) => {
+    let error = '';
+    if (name === 'email') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!value) error = 'Email é obrigatório';
+      else if (!emailRegex.test(value)) error = 'Formato de email inválido';
+    } else if (name === 'password') {
+      if (!value) error = 'Palavra-passe é obrigatória';
+      else if (value.length < 6) error = 'Mínimo de 6 caracteres';
+    } else if (name === 'confirmPassword') {
+      if (value !== authData.password) error = 'As palavras-passe não coincidem';
+    } else if (name === 'handle') {
+      if (authMode === 'register') {
+        if (!value) error = 'Handle é obrigatório';
+        else if (!/^@[a-zA-Z0-9_]+$/.test(value)) error = 'Formato inválido (ex: @user_123)';
+      }
+    } else if (name === 'name') {
+      if (authMode === 'register' && !value) error = 'Nome é obrigatório';
+    }
+    setAuthErrors(prev => ({ ...prev, [name]: error }));
+    return error === '';
+  };
+
+  const handleAuthInputChange = (e) => {
+    const { name, value } = e.target;
+    setAuthData(prev => ({ ...prev, [name]: value }));
+    validateField(name, value);
+  };
+
+  const handleAuth = async (e) => {
+    e.preventDefault()
+
+    // Final validation
+    const fieldsToValidate = authMode === 'login' ? ['email', 'password'] : ['name', 'handle', 'email', 'password', 'confirmPassword'];
+    let isValid = true;
+    fieldsToValidate.forEach(field => {
+      if (!validateField(field, authData[field])) isValid = false;
+    });
+
+    if (!isValid) return;
+
+    setIsSubmitting(true);
+    try {
+      if (authMode === 'login') {
+        const res = await apiClient.post('/auth/login', { email: authData.email, password: authData.password })
+        if (res.success) {
+          setUser(res.user)
+          setIsLoggedIn(true)
+          localStorage.setItem('tywaky_user', JSON.stringify(res.user))
+          localStorage.setItem('tywaky_token', res.token)
+        }
+      } else {
+        const newUser = {
+          id: Date.now(),
+          name: authData.name,
+          email: authData.email,
+          password: authData.password,
+          handle: authData.handle,
+          bio: 'Novo na Tywaky!',
+          followers: 0,
+          following: 0,
+          avatarUrl: '',
+          bannerUrl: ''
+        }
+        const res = await apiClient.post('/auth/register', newUser)
+        if (res.success) {
+          setUser(res.user)
+          setIsLoggedIn(true)
+          localStorage.setItem('tywaky_user', JSON.stringify(res.user))
+          localStorage.setItem('tywaky_token', res.token)
+        }
+      }
+    } catch (error) {
+      console.error('Erro na autenticação:', error)
+      setAuthErrors(prev => ({ ...prev, form: error.message || 'Credenciais inválidas ou erro de rede.' }))
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('tywaky_user')
+    localStorage.removeItem('tywaky_token')
+    setIsLoggedIn(false)
+    setUser(null)
+  }
+
+  const handlePostImageChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setNewPostImage(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const createPost = async () => {
+    if (!newPostContent.trim() && !newPostImage) return
+    const post = {
+      id: Date.now(),
+      user: user.name,
+      handle: user.handle,
+      content: newPostContent,
+      avatar: user.avatarUrl,
+      imageUrl: newPostImage || '',
+      likes: 0,
+      liked: false,
+      comments: 0,
+      time: 'Agora',
+      isPinned: false
+    }
+    try {
+      await apiClient.post('/posts', post)
+      setPosts([post, ...posts].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)))
+      setNewPostContent('')
+      setNewPostImage(null)
+      setActiveMenuPostId(null)
+    } catch (error) {
+      console.error('Erro ao publicar:', error)
+    }
+  }
+
+
+  const handleAddComment = async () => {
+    if (!commentModal.content.trim()) return;
+    const newComment = {
+      id: Date.now(),
+      user: user.name,
+      content: commentModal.content,
+      time: 'Agora'
+    };
+    try {
+      await apiClient.post(`/posts/${commentModal.postId}/comments`, newComment);
+      setPosts(prevPosts => prevPosts.map(p => {
+        if (p.id === commentModal.postId) {
+          const currentComments = Array.isArray(p.comments) ? p.comments : [];
+          return { ...p, comments: [...currentComments, newComment] };
+        }
+        return p;
+      }));
+      setCommentModal({ isOpen: false, postId: null, content: '' });
+    } catch (err) {
+      console.error('Erro ao adicionar comentário:', err);
+    }
+  }; const handleDeleteComment = async (postId, commentId) => {
+    try {
+      await apiClient.delete(`/posts/${postId}/comments/${commentId}`);
+      setPosts(prevPosts => prevPosts.map(p => {
+        if (p.id === postId) {
+          const currentComments = Array.isArray(p.comments) ? p.comments : [];
+          return { ...p, comments: currentComments.filter(c => c.id !== commentId) };
+        }
+        return p;
+      }));
+    } catch (err) {
+      console.error('Erro ao eliminar comentário:', err);
+    }
+  };
+
+  const handleFollow = async (targetId) => {
+    try {
+      const res = await apiClient.post(`/user/${targetId}/follow`, { userId: user.id });
+      if (res.success) {
+        setUser(res.user);
+        localStorage.setItem('tywaky_user', JSON.stringify(res.user));
+      }
+    } catch (err) {
+      console.error('Erro ao seguir:', err);
+    }
+  };
+
+  const handleUnfollow = async (targetId) => {
+    try {
+      const res = await apiClient.post(`/user/${targetId}/unfollow`, { userId: user.id });
+      if (res.success) {
+        setUser(res.user);
+        localStorage.setItem('tywaky_user', JSON.stringify(res.user));
+      }
+    } catch (err) {
+      console.error('Erro ao deixar de seguir:', err);
+    }
+  };
+
+  const handleViewProfile = async (handle) => {
+    if (handle === user.handle) {
+      setViewedProfile(null);
+      setCurrentView('profile');
+      return;
+    }
+
+    try {
+      const res = await apiClient.get(`/user/handle/${handle}`);
+      if (res.success) {
+        setViewedProfile(res.user);
+        setCurrentView('profile');
+      }
+    } catch (err) {
+      console.error('Erro ao carregar perfil:', err);
+    }
+  };
+
+  const toggleLike = (postId) => {
+    // Para protótipo, o like ainda pode ser local no estado, 
+    // mas num backend real faríamos post para /posts/:id/like
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          likes: p.liked ? p.likes - 1 : p.likes + 1,
+          liked: !p.liked
+        }
+      }
+      return p
+    }))
+  }
+
+  const openEditModal = () => {
+    setEditData({
+      name: user.name,
+      bio: user.bio,
+      avatarUrl: user.avatarUrl || '',
+      bannerUrl: user.bannerUrl || ''
+    })
+    setIsEditingProfile(true)
+  }
+
+  const requestDeletePost = (postId) => {
+    setActiveMenuPostId(null)
+    setConfirmModal({ isOpen: true, postId })
+  }
+
+  const deletePost = async () => {
+    const { postId } = confirmModal
+    try {
+      await apiClient.delete(`/posts/${postId}`)
+      setPosts(posts.filter(p => String(p.id) !== String(postId)))
+      setConfirmModal({ isOpen: false, postId: null })
+    } catch (err) {
+      console.error('Erro ao eliminar post:', err)
+    }
+  }
+
+  const togglePin = async (post) => {
+    const newPinStatus = !post.isPinned
+    try {
+      await apiClient.put(`/posts/${post.id}`, { isPinned: newPinStatus })
+      const updatedPosts = posts.map(p =>
+        String(p.id) === String(post.id) ? { ...p, isPinned: newPinStatus } : p
+      ).sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+      setPosts(updatedPosts)
+      setActiveMenuPostId(null)
+    } catch (err) {
+      console.error('Erro ao fixar post:', err)
+    }
+  }
+
+  const handleEditPost = (post) => {
+    setEditingPost({ ...post })
+    setActiveMenuPostId(null)
+  }
+
+  const saveEditedPost = async () => {
+    if (!editingPost.content.trim()) return
+    try {
+      await apiClient.put(`/posts/${editingPost.id}`, {
+        content: editingPost.content,
+        imageUrl: editingPost.imageUrl
+      })
+      setPosts(posts.map(p =>
+        String(p.id) === String(editingPost.id)
+          ? { ...p, content: editingPost.content, imageUrl: editingPost.imageUrl }
+          : p
+      ))
+      setEditingPost(null)
+    } catch (err) {
+      console.error('Erro ao editar post:', err)
+    }
+  }
+
+  const handleFileChange = (e, type) => {
+    const file = e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setEditData(prev => ({ ...prev, [type]: reader.result }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const saveProfile = async () => {
+    const payload = { id: user.id, ...editData };
+
+    try {
+      const res = await apiClient.put('/user/update', payload)
+
+      if (res && res.success) {
+        setUser(res.user)
+        localStorage.setItem('tywaky_user', JSON.stringify(res.user))
+        setIsEditingProfile(false)
+      } else {
+        alert('Erro do servidor: ' + (res?.message || 'Resposta inesperada'));
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar perfil:', err);
+      alert('Falha crítica na comunicação: ' + err.message);
+    }
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="app-container">
+        <div className="auth-card glass">
+          <img src="/assets/logo.png" alt="Tywaky Logo" style={{ width: '220px', height: 'auto', margin: '0 auto 1.5rem', display: 'block', objectFit: 'contain' }} />
+          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Bem-vindo à rede do futuro.</p>
+
+          <div className="auth-tabs">
+            <button
+              className={`tab-btn ${authMode === 'login' ? 'active' : ''}`}
+              onClick={() => setAuthMode('login')}
+            >
+              Entrar
+            </button>
+            <button
+              className={`tab-btn ${authMode === 'register' ? 'active' : ''}`}
+              onClick={() => setAuthMode('register')}
+            >
+              Criar Conta
+            </button>
+          </div>
+
+          <form onSubmit={handleAuth}>
+            {authMode === 'register' && (
+              <>
+                <div className={`input-group ${authErrors.name ? 'error' : ''}`}>
+                  <label>Nome Completo</label>
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Teu nome"
+                    value={authData.name}
+                    onChange={handleAuthInputChange}
+                    required
+                  />
+                  {authErrors.name && <div className="error-message">{authErrors.name}</div>}
+                </div>
+                <div className={`input-group ${authErrors.handle ? 'error' : ''}`}>
+                  <label>Utilizador (Handle)</label>
+                  <input
+                    type="text"
+                    name="handle"
+                    placeholder="@teu_handle"
+                    value={authData.handle}
+                    onChange={handleAuthInputChange}
+                    required
+                  />
+                  {authErrors.handle && <div className="error-message">{authErrors.handle}</div>}
+                </div>
+              </>
+            )}
+            <div className={`input-group ${authErrors.email ? 'error' : ''}`}>
+              <label>Email</label>
+              <input
+                type="email"
+                name="email"
+                placeholder="exemplo@email.com"
+                value={authData.email}
+                onChange={handleAuthInputChange}
+                required
+              />
+              {authErrors.email && <div className="error-message">{authErrors.email}</div>}
+            </div>
+            <div className={`input-group ${authErrors.password ? 'error' : ''}`}>
+              <label>Palavra-passe</label>
+              <input
+                type="password"
+                name="password"
+                placeholder="••••••••"
+                value={authData.password}
+                onChange={handleAuthInputChange}
+                required
+              />
+              {authErrors.password && <div className="error-message">{authErrors.password}</div>}
+            </div>
+            {authMode === 'register' && (
+              <div className={`input-group ${authErrors.confirmPassword ? 'error' : ''}`}>
+                <label>Confirmar Palavra-passe</label>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  placeholder="••••••••"
+                  value={authData.confirmPassword}
+                  onChange={handleAuthInputChange}
+                  required
+                />
+                {authErrors.confirmPassword && <div className="error-message">{authErrors.confirmPassword}</div>}
+              </div>
+            )}
+
+            {authErrors.form && <div className="error-message" style={{ marginBottom: '1rem', textAlign: 'center' }}>{authErrors.form}</div>}
+
+            <button type="submit" className={`btn-primary ${isSubmitting ? 'submitting' : ''}`} disabled={isSubmitting}>
+              {isSubmitting ? 'A processar...' : (authMode === 'login' ? 'Entrar' : 'Começar Agora')}
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="main-wrapper">
+      <Sidebar
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        user={user}
+        handleLogout={handleLogout}
+        setViewedProfile={setViewedProfile}
+      />
+
+      <main className="main-content">
+        {currentView === 'feed' ? (
+          <>
+            <header className="header">
+              <h3>Feed Principal</h3>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  placeholder="Pesquisar..."
+                  className="glass"
+                  style={{ padding: '0.6rem 1rem', borderRadius: '20px', border: 'none', color: 'white', width: '250px' }}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </header>
+
+            <div className="mini-profile-card glass">
+              <div className="mini-banner" style={{
+                backgroundImage: user.bannerUrl ? `url(${user.bannerUrl})` : 'linear-gradient(135deg, #1e1b4b, #4f46e5)',
+                height: '250px'
+              }}></div>
+              <div style={{ padding: '0 2rem 2rem', position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <div className="avatar-mini" style={{
+                    backgroundImage: user.avatarUrl ? `url(${user.avatarUrl})` : '',
+                    backgroundColor: 'var(--primary)'
+                  }}></div>
+
+                  {/* Bio Ticker */}
+                  <div className="ticker-mini">
+                    <div className="ticker-label">LATEST BIO</div>
+                    <div className="ticker-content">
+                      {user.bio} &nbsp;&bull;&nbsp; {user.bio} &nbsp;&bull;&nbsp; {user.bio}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '1rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.4rem' }}>{user.name}</h3>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{user.handle}</span>
+                </div>
+
+                <p style={{ margin: '1rem 0', fontSize: '1rem', color: 'rgba(255,255,255,0.9)' }}>{user.bio}</p>
+
+                <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.9rem' }}>
+                  <span><strong>{user.following}</strong> <span style={{ color: 'var(--text-muted)' }}>A seguir</span></span>
+                  <span><strong>{user.followers}</strong> <span style={{ color: 'var(--text-muted)' }}>Seguidores</span></span>
+                </div>
+              </div>
+            </div>
+
+            <PostEditor
+              user={user}
+              newPostContent={newPostContent}
+              setNewPostContent={setNewPostContent}
+              newPostImage={newPostImage}
+              setNewPostImage={setNewPostImage}
+              handlePostImageChange={handlePostImageChange}
+              createPost={createPost}
+            />
+
+            <section className="feed">
+              {isInitialLoading ? (
+                [...Array(3)].map((_, i) => (
+                  <div key={i} className="skeleton-post glass">
+                    <div className="skeleton-header">
+                      <div className="skeleton-avatar"></div>
+                      <div className="skeleton-line-group">
+                        <div className="skeleton-line short"></div>
+                        <div className="skeleton-line x-short"></div>
+                      </div>
+                    </div>
+                    <div className="skeleton-content">
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line medium"></div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                posts
+                  .filter(post =>
+                    (post.content?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+                    (post.user?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+                    (post.handle?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+                  )
+                  .map(post => (
+                    <Post
+                      key={post.id}
+                      post={post}
+                      currentUser={user}
+                      activeMenuPostId={activeMenuPostId}
+                      setActiveMenuPostId={setActiveMenuPostId}
+                      togglePin={togglePin}
+                      handleEditPost={handleEditPost}
+                      requestDeletePost={requestDeletePost}
+                      toggleLike={toggleLike}
+                      setCommentModal={setCommentModal}
+                      handleDeleteComment={handleDeleteComment}
+                      handleViewProfile={handleViewProfile}
+                    />
+                  ))
+              )}
+
+              {!isInitialLoading && visiblePosts < posts.length && (
+                <div className="load-more-trigger" ref={(el) => {
+                  if (el) {
+                    const observer = new IntersectionObserver((entries) => {
+                      if (entries[0].isIntersecting && !isLoadingMore) {
+                        setIsLoadingMore(true);
+                        setTimeout(() => {
+                          setVisiblePosts(prev => prev + 6);
+                          setIsLoadingMore(false);
+                        }, 800);
+                      }
+                    }, { threshold: 1.0 });
+                    observer.observe(el);
+                  }
+                }}>
+                  {isLoadingMore && <div className="loader-spinner"></div>}
+                </div>
+              )}
+            </section>
+          </>
+        ) : (
+          <ProfileView
+            user={viewedProfile || user}
+            isOwnProfile={!viewedProfile || viewedProfile.id === user.id}
+            currentUser={user}
+            posts={posts}
+            activeMenuPostId={activeMenuPostId}
+            setActiveMenuPostId={setActiveMenuPostId}
+            togglePin={togglePin}
+            handleEditPost={handleEditPost}
+            requestDeletePost={requestDeletePost}
+            toggleLike={toggleLike}
+            setCommentModal={setCommentModal}
+            PostComponent={Post}
+            openEditModal={openEditModal}
+            handleDeleteComment={handleDeleteComment}
+            handleFollow={handleFollow}
+            handleUnfollow={handleUnfollow}
+            handleViewProfile={handleViewProfile}
+          />
+        )}
+      </main>
+
+      <Trending handleViewProfile={handleViewProfile} allUsers={allUsers} currentUser={user} />
+
+      <Modals
+        isEditingProfile={isEditingProfile}
+        setIsEditingProfile={setIsEditingProfile}
+        editData={editData}
+        setEditData={setEditData}
+        handleFileChange={handleFileChange}
+        saveProfile={saveProfile}
+        editingPost={editingPost}
+        setEditingPost={setEditingPost}
+        saveEditedPost={saveEditedPost}
+        confirmModal={confirmModal}
+        setConfirmModal={setConfirmModal}
+        deletePost={deletePost}
+        commentModal={commentModal}
+        setCommentModal={setCommentModal}
+        handleAddComment={handleAddComment}
+      />
+    </div>
+  )
+}
+
+export default App
