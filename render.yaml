@@ -9,7 +9,7 @@ services:
     startCommand: node server.js
     envVars:
       - key: MONGODB_URI
-        value: " COLE_AVISO: _link_do_mongodb_aqui"
+        value: "mongodb+srv://tywakysocial_db_user:aSJqJYD5AVw1Tiy8@tywaky-db.vzzw1fg.mongodb.net/?appName=tywaky-db"
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
