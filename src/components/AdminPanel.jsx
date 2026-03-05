@@ -111,9 +111,14 @@ const AdminPanel = ({ currentUser, handleViewProfile }) => {
 
     return (
         <div className="admin-container glass" style={{ padding: '2rem', marginTop: '2rem' }}>
-            <h2 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                🛡️ Moderação Avançada Tywaky
-            </h2>
+            <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    Shield 🛡️ Moderação Avançada Tywaky
+                </h2>
+                <button onClick={handleFixStats} className="tool-btn" style={{ background: 'var(--primary)', color: 'white', padding: '0.6rem 1.2rem', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
+                    🔄 Sincronizar Tudo
+                </button>
+            </div>
 
             {message && (
                 <div className={`alert ${message.type}`} style={{

@@ -203,7 +203,7 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
     }
 });
 
-// Banir CONTA (Permanente ou temporário se 'days' for enviado)
+// Banir conta e recalcular estatísticas
 app.post('/api/admin/ban/account', isAdmin, async (req, res) => {
     try {
         const { userId, days } = req.body;
@@ -217,10 +217,52 @@ app.post('/api/admin/ban/account', isAdmin, async (req, res) => {
             update.banExpires = null; // Permanente
         }
 
-        await User.findByIdAndUpdate(userId, update);
+        const user = await User.findByIdAndUpdate(userId, update, { new: true });
+
+        // Sincronizar stats ao banir (opcional, mas bom para consistência)
+        if (user) {
+            user.following = (user.followingIds || []).length;
+            await user.save();
+        }
+
         res.json({ success: true, message: 'Conta suspensa com sucesso.' });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Erro ao banir conta' });
+    }
+});
+
+// Endpoint global de correção de dados (ADMIN ONLY)
+app.post('/api/admin/system/fix-stats', isAdmin, async (req, res) => {
+    try {
+        const users = await User.find({});
+        const results = [];
+
+        for (const user of users) {
+            // 1. Unificar e limpar IDs de seguimento
+            const originalIds = user.followingIds || [];
+            const uniqueIds = [...new Set(originalIds)];
+
+            // 2. Verificar se os IDs seguidos ainda existem
+            const validIds = [];
+            for (const followId of uniqueIds) {
+                const exists = await User.findById(followId);
+                if (exists) validIds.push(followId);
+            }
+
+            user.followingIds = validIds;
+            user.following = validIds.length;
+
+            // 3. Recalcular seguidores (quem segue este user)
+            const followersCount = await User.countDocuments({ followingIds: user._id.toString() });
+            user.followers = followersCount;
+
+            await user.save();
+            results.push({ handle: user.handle, following: user.following, followers: user.followers });
+        }
+
+        res.json({ success: true, results });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 

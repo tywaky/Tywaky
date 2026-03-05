@@ -269,27 +269,48 @@ function App() {
     }
   };
 
-  const handleFollow = async (targetId) => {
+  const handleFollow = async (targetUserId) => {
+    if (!isLoggedIn) return;
     try {
-      const res = await apiClient.post(`/user/${targetId}/follow`, { userId: user._id || user.id });
+      const res = await apiClient.post(`/user/${targetUserId}/follow`, { userId: user._id || user.id });
       if (res.success) {
-        setUser(res.user);
-        localStorage.setItem('tywaky_user', JSON.stringify(res.user));
+        // Sync with server data to ensure stats are correct
+        const updatedFollowingIds = res.user?.followingIds || [...(user.followingIds || []), String(targetUserId)];
+        const uniqueIds = [...new Set(updatedFollowingIds)];
+
+        const updatedUser = {
+          ...user,
+          following: uniqueIds.length,
+          followingIds: uniqueIds
+        };
+        setUser(updatedUser);
+        localStorage.setItem('tywaky_user', JSON.stringify(updatedUser));
+
+        // Refresh all data to sync other user's followers
+        fetchData();
       }
-    } catch (err) {
-      console.error('Erro ao seguir:', err);
+    } catch (error) {
+      console.error('Erro ao seguir:', error);
     }
   };
 
-  const handleUnfollow = async (targetId) => {
+  const handleUnfollow = async (targetUserId) => {
+    if (!isLoggedIn) return;
     try {
-      const res = await apiClient.post(`/user/${targetId}/unfollow`, { userId: user._id || user.id });
+      const res = await apiClient.post(`/user/${targetUserId}/unfollow`, { userId: user._id || user.id });
       if (res.success) {
-        setUser(res.user);
-        localStorage.setItem('tywaky_user', JSON.stringify(res.user));
+        const updatedFollowingIds = (user.followingIds || []).filter(id => id !== String(targetUserId));
+        const updatedUser = {
+          ...user,
+          following: updatedFollowingIds.length,
+          followingIds: updatedFollowingIds
+        };
+        setUser(updatedUser);
+        localStorage.setItem('tywaky_user', JSON.stringify(updatedUser));
+        fetchData();
       }
-    } catch (err) {
-      console.error('Erro ao deixar de seguir:', err);
+    } catch (error) {
+      console.error('Erro ao deixar de seguir:', error);
     }
   };
 
