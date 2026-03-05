@@ -393,7 +393,7 @@ function App() {
   }
 
   const saveProfile = async () => {
-    const payload = { id: user.id, ...editData };
+    const payload = { _id: user._id || user.id, ...editData };
 
     try {
       const res = await apiClient.put('/user/update', payload)
@@ -609,22 +609,25 @@ function App() {
                     (post.user?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
                     (post.handle?.toLowerCase() || "").includes(searchTerm.toLowerCase())
                   )
-                  .map(post => (
-                    <Post
-                      key={post.id}
-                      post={post}
-                      currentUser={user}
-                      activeMenuPostId={activeMenuPostId}
-                      setActiveMenuPostId={setActiveMenuPostId}
-                      togglePin={togglePin}
-                      handleEditPost={handleEditPost}
-                      requestDeletePost={requestDeletePost}
-                      toggleLike={toggleLike}
-                      setCommentModal={setCommentModal}
-                      handleDeleteComment={handleDeleteComment}
-                      handleViewProfile={handleViewProfile}
-                    />
-                  ))
+                  .map(post => {
+                    const pid = post._id || post.id;
+                    return (
+                      <Post
+                        key={pid}
+                        post={post}
+                        currentUser={user}
+                        activeMenuPostId={activeMenuPostId}
+                        setActiveMenuPostId={setActiveMenuPostId}
+                        togglePin={togglePin}
+                        handleEditPost={handleEditPost}
+                        requestDeletePost={requestDeletePost}
+                        toggleLike={toggleLike}
+                        setCommentModal={setCommentModal}
+                        handleDeleteComment={handleDeleteComment}
+                        handleViewProfile={handleViewProfile}
+                      />
+                    );
+                  })
               )}
 
               {!isInitialLoading && visiblePosts < posts.length && (

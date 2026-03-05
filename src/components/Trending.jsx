@@ -5,7 +5,11 @@ const Trending = ({ handleViewProfile, allUsers = [], currentUser }) => {
 
     // Sugerir utilizadores que o utilizador atual ainda não segue
     const suggestions = allUsers
-        .filter(u => u.handle !== currentUser?.handle && !currentUser?.followingIds?.includes(String(u.id)))
+        .filter(u => {
+            const uid = u._id || u.id;
+            const currentUid = currentUser?._id || currentUser?.id;
+            return u.handle !== currentUser?.handle && !currentUser?.followingIds?.includes(String(uid));
+        })
         .slice(0, 3);
 
     return (
