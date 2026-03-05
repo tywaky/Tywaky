@@ -17,7 +17,8 @@ const ProfileView = ({
     handleDeleteComment,
     handleFollow,
     handleUnfollow,
-    handleViewProfile
+    handleViewProfile,
+    setCurrentView
 }) => {
     const isFollowing = currentUser?.followingIds?.includes(String(user?._id || user?.id));
     const normalizedUserId = user?._id || user?.id;
@@ -45,20 +46,31 @@ const ProfileView = ({
                     {effectiveIsOwnProfile ? (
                         <button onClick={openEditModal} className="tool-btn" style={{ border: '1px solid var(--glass-border)', padding: '0.6rem 1.5rem', borderRadius: '12px' }}>Editar Perfil</button>
                     ) : (
-                        <button
-                            onClick={() => isFollowing ? handleUnfollow(normalizedUserId) : handleFollow(normalizedUserId)}
-                            className={`tool-btn ${isFollowing ? '' : 'active'}`}
-                            style={{
-                                background: isFollowing ? 'transparent' : 'white',
-                                color: isFollowing ? 'white' : 'black',
-                                border: '1px solid var(--glass-border)',
-                                padding: '0.6rem 1.5rem',
-                                borderRadius: '12px',
-                                fontWeight: 'bold'
-                            }}
-                        >
-                            {isFollowing ? 'A seguir' : 'Seguir'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            {!effectiveIsOwnProfile && (
+                                <button
+                                    onClick={() => setCurrentView('messages')}
+                                    className="tool-btn"
+                                    style={{ border: '1px solid var(--glass-border)', padding: '0.6rem 1.5rem', borderRadius: '12px' }}
+                                >
+                                    ✉️ Mensagem
+                                </button>
+                            )}
+                            <button
+                                onClick={() => isFollowing ? handleUnfollow(normalizedUserId) : handleFollow(normalizedUserId)}
+                                className={`tool-btn ${isFollowing ? '' : 'active'}`}
+                                style={{
+                                    background: isFollowing ? 'transparent' : 'white',
+                                    color: isFollowing ? 'white' : 'black',
+                                    border: '1px solid var(--glass-border)',
+                                    padding: '0.6rem 1.5rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                {isFollowing ? 'A seguir' : 'Seguir'}
+                            </button>
+                        </div>
                     )}
                 </div>
 

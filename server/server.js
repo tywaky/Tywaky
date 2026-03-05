@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const connectDB = require('./db');
 const User = require('./models/User');
 const Post = require('./models/Post');
+const Message = require('./models/Message');
 const BannedIp = require('./models/BannedIp');
 require('dotenv').config();
 
@@ -577,6 +578,71 @@ app.delete('/api/posts/:id/comments/:commentId', async (req, res) => {
 });
 
 // O frontend será servido pela Vercel separadamente
+
+// Mensagens Privadas (DMs)
+app.post('/api/messages', async (req, res) => {
+    const { senderId, receiverId, content } = req.body;
+    try {
+        const newMessage = new Message({
+            senderId,
+            receiverId,
+            content
+        });
+        await newMessage.save();
+        res.status(201).json({ success: true, message: newMessage });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.get('/api/messages/:otherUserId', async (req, res) => {
+    const { otherUserId } = req.params;
+    const { userId } = req.query; // Passado como query param (?userId=...)
+    try {
+        const messages = await Message.find({
+            $or: [
+                { senderId: userId, receiverId: otherUserId },
+                { senderId: otherUserId, receiverId: userId }
+            ]
+        }).sort({ createdAt: 1 });
+        res.json({ success: true, messages });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.get('/api/conversations', async (req, res) => {
+    const { userId } = req.query;
+    try {
+        // Encontrar todas as mensagens onde o utilizador está envolvido
+        const messages = await Message.find({
+            $or: [{ senderId: userId }, { receiverId: userId }]
+        }).sort({ createdAt: -1 });
+
+        const conversations = [];
+        const seenUsers = new Set();
+
+        for (const msg of messages) {
+            const otherUserId = String(msg.senderId) === String(userId) ? String(msg.receiverId) : String(msg.senderId);
+            if (!seenUsers.has(otherUserId)) {
+                seenUsers.add(otherUserId);
+                const otherUser = await User.findById(otherUserId).select('name handle avatarUrl');
+                if (otherUser) {
+                    conversations.push({
+                        userId: otherUserId,
+                        user: otherUser,
+                        lastMessage: msg.content,
+                        time: msg.createdAt,
+                        isRead: msg.isRead
+                    });
+                }
+            }
+        }
+        res.json({ success: true, conversations });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`🚀 Tywaky Backend a correr na porta ${PORT}`);

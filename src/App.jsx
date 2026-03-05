@@ -8,6 +8,7 @@ import PostEditor from './components/PostEditor'
 import ProfileView from './components/ProfileView'
 import Modals from './components/Modals'
 import AdminPanel from './components/AdminPanel'
+import MessagesView from './components/MessagesView'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -694,8 +695,10 @@ function App() {
               )}
             </section>
           </>
-        ) : currentView === 'admin' ? (
-          <AdminPanel currentUser={user} handleViewProfile={handleViewProfile} />
+        ) : currentView === 'messages' ? (
+          <MessagesView user={user} />
+        ) : user?.isAdmin && currentView === 'admin' ? (
+          <AdminPanel user={user} setViewedProfile={setViewedProfile} setCurrentView={setCurrentView} />
         ) : (
           <ProfileView
             user={viewedProfile || user}
@@ -712,6 +715,7 @@ function App() {
             PostComponent={Post}
             openEditModal={openEditModal}
             handleDeleteComment={handleDeleteComment}
+            setCurrentView={setCurrentView}
             handleFollow={handleFollow}
             handleUnfollow={handleUnfollow}
             handleViewProfile={handleViewProfile}

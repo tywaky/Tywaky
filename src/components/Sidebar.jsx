@@ -24,7 +24,15 @@ const Sidebar = ({ currentView, setCurrentView, user, handleLogout, setViewedPro
                 </button>
                 <button className="nav-link"><span>🔍</span> Explorar</button>
                 <button className="nav-link"><span>🔔</span> Notificações</button>
-                <button className="nav-link"><span>✉️</span> Mensagens</button>
+                <button
+                    onClick={() => {
+                        setViewedProfile(null);
+                        setCurrentView('messages');
+                    }}
+                    className={`nav-link ${currentView === 'messages' ? 'active' : ''}`}
+                >
+                    <span>✉️</span> Mensagens
+                </button>
                 <button
                     onClick={() => {
                         setViewedProfile(null);
