@@ -377,7 +377,8 @@ function App() {
     const { postId } = confirmModal
     try {
       await apiClient.delete(`/posts/${postId}`)
-      setPosts(posts.filter(p => String(p.id) !== String(postId)))
+      // FIX: Use both _id and id for the filter
+      setPosts(posts.filter(p => String(p._id || p.id) !== String(postId)))
       setConfirmModal({ isOpen: false, postId: null })
     } catch (err) {
       console.error('Erro ao eliminar post:', err)
@@ -385,11 +386,12 @@ function App() {
   }
 
   const togglePin = async (post) => {
+    const postId = post._id || post.id
     const newPinStatus = !post.isPinned
     try {
-      await apiClient.put(`/posts/${post.id}`, { isPinned: newPinStatus })
+      await apiClient.put(`/posts/${postId}`, { isPinned: newPinStatus })
       const updatedPosts = posts.map(p =>
-        String(p.id) === String(post.id) ? { ...p, isPinned: newPinStatus } : p
+        String(p._id || p.id) === String(postId) ? { ...p, isPinned: newPinStatus } : p
       ).sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
       setPosts(updatedPosts)
       setActiveMenuPostId(null)
@@ -405,13 +407,14 @@ function App() {
 
   const saveEditedPost = async () => {
     if (!editingPost.content.trim()) return
+    const postId = editingPost._id || editingPost.id
     try {
-      await apiClient.put(`/posts/${editingPost.id}`, {
+      await apiClient.put(`/posts/${postId}`, {
         content: editingPost.content,
         imageUrl: editingPost.imageUrl
       })
       setPosts(posts.map(p =>
-        String(p.id) === String(editingPost.id)
+        String(p._id || p.id) === String(postId)
           ? { ...p, content: editingPost.content, imageUrl: editingPost.imageUrl }
           : p
       ))
