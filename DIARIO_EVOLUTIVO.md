@@ -284,4 +284,55 @@ A rede social opera agora num modelo de **Cloud Distribuída e Automática**:
 4. **Cérebro de Auto-Sincronização:** O frontend mantém-se em constante diálogo com o servidor, garantindo que a rede nunca está "parada".
 
 ---
-*Documento atualizado em 2026-03-05 21:35:00*
+---
+
+## 🏗️ Fase 15: Modularização e Estrutura V4 (v4.0)
+
+### 2026-03-05
+
+### 15.1 Reconstrução do Painel Admin
+
+- **Correção de Props:** Resolvido o erro em `App.jsx` que impedia o carregamento do painel administrativo.
+- **Auditoria de Performance:** Limpeza de variáveis não utilizadas e otimização das chamadas à API de moderação.
+
+### 15.2 Layout de Três Colunas (Pro UX)
+
+- **RightSidebar:** Implementação de uma terceira coluna dedicada a contactos (seguidores/seguindo) e espaços para publicidade futura.
+- **Densidade Visual:** Reduzida a altura vertical da lista de contactos para libertar espaço estratégico no topo e fundo da barra lateral, otimizando a visualização em resoluções 1920x1080.
+- **Glassmorphism V2:** Refinamento dos efeitos de vidro para garantir legibilidade máxima sobre o fundo dinâmico.
+
+---
+
+## 💬 Fase 16: Messenger Pro & Floating Chat (v5.0)
+
+### 2026-03-05
+
+### 16.1 O Fim do Modelo "Página de Mensagens"
+
+- **Limpeza de Legado:** Remoção total do menu "Mensagens" e do componente `MessagesView` de ecrã inteiro.
+- **Navegação Contínua:** Agora é possível navegar em todo o site sem nunca interromper a experiência de chat.
+
+### 16.2 Chat Flutuante (Estilo Facebook/Messenger)
+
+- **FloatingChat.jsx:** Novo componente flutuante no canto inferior direito que se abre instantaneamente ao clicar num contacto.
+- **Polling Otimizado:** O chat flutuante mantém-se sincronizado com o servidor a cada 3 segundos, garantindo conversas em tempo real.
+- **Smart Trigger:** O chat pode ser ativado a partir da barra lateral direita ou diretamente no botão "Mensagem" no perfil de qualquer utilizador.
+
+### 16.3 Animações e Micro-Interações
+
+- **Slide-Up Animation:** Transição suave de entrada e saída das janelas de chat.
+- **Notificações Subtis:** Feedback visual integrado para novas mensagens e estados de envio.
+
+---
+
+## 🌍 Estrutura Final do Ecossistema (Tywaky v5.0)
+
+Com a versão 5.0, a Tywaky transformou-se numa plataforma moderna de "Single View Experience":
+
+1. **Navegação à Esquerda (Sidebar):** Organizada e minimalista.
+2. **Conteúdo ao Centro:** Focado no feed e na identidade social.
+3. **Contactos à Direita (RightSidebar):** Sempre acessível para mensagens rápidas.
+4. **Chat Dinâmico (FloatingChat):** Camada de conversação flutuante que não bloqueia a exploração.
+
+---
+*Documento atualizado em 2026-03-05 23:50:00*
