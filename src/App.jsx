@@ -33,68 +33,70 @@ function App() {
   const [authErrors, setAuthErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Load Initial Data
-  useEffect(() => {
-    const initializeApp = async () => {
-      // User Session
+  // Load/Refresh Data
+  const fetchData = async (isInitial = false) => {
+    try {
       const savedUser = localStorage.getItem('tywaky_user');
-      const savedToken = localStorage.getItem('tywaky_token');
-      if (savedUser && savedToken) {
-        setUser(JSON.parse(savedUser));
-        setIsLoggedIn(true);
+      const postsData = await apiClient.get('/posts');
+      const usersData = await apiClient.get('/users');
+      setAllUsers(usersData);
+
+      // Refresh current user data if logged in
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        const currentUserData = usersData.find(u => u.handle === parsedUser.handle || u.email === parsedUser.email);
+        if (currentUserData) {
+          setUser(currentUserData);
+          localStorage.setItem('tywaky_user', JSON.stringify(currentUserData));
+        }
       }
 
-      // Posts
-      try {
-        const postsData = await apiClient.get('/posts');
-        const usersData = await apiClient.get('/users');
-        setAllUsers(usersData);
+      const FallbackPosts = [];
+      const rawPosts = (Array.isArray(postsData) && postsData.length > 0 ? postsData : FallbackPosts);
 
-        // Refresh current user data to ensure _id is present
-        if (savedUser) {
-          const parsedUser = JSON.parse(savedUser);
-          const currentUserData = usersData.find(u => u.handle === parsedUser.handle || u.email === parsedUser.email);
-          if (currentUserData) {
-            setUser(currentUserData);
-            localStorage.setItem('tywaky_user', JSON.stringify(currentUserData));
+      // Enrich posts with user data
+      const enrichedPosts = rawPosts.map(post => {
+        if (!post.user && post.userId) {
+          const postUser = usersData.find(u => (u._id === post.userId || u.id === post.userId));
+          if (postUser) {
+            return {
+              ...post,
+              user: postUser.name,
+              handle: postUser.handle,
+              avatar: postUser.avatarUrl,
+              userId: postUser._id
+            };
           }
         }
+        return post;
+      }).sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
 
-        const FallbackPosts = [];
+      setPosts(enrichedPosts);
+    } catch (error) {
+      console.error('Falha ao sincronizar dados:', error);
+    }
+  };
 
-        const rawPosts = (Array.isArray(postsData) && postsData.length > 0 ? postsData : FallbackPosts);
+  useEffect(() => {
+    // Initial Load
+    fetchData(true);
 
-        // Enrich posts with user data if missing
-        const enrichedPosts = rawPosts.map(post => {
-          if (!post.user && post.userId) {
-            const postUser = usersData.find(u => (u._id === post.userId || u.id === post.userId));
-            if (postUser) {
-              return {
-                ...post,
-                user: postUser.name,
-                handle: postUser.handle,
-                avatar: postUser.avatarUrl,
-                userId: postUser._id // Unificar para _id
-              };
-            }
-          }
-          return post;
-        }).sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+    // Polling Interval: Refresh every 15 seconds for "Fluidity"
+    const syncInterval = setInterval(() => {
+      fetchData();
+    }, 15000);
 
-        setPosts(enrichedPosts);
-      } catch (error) {
-        console.error('Falha ao carregar dados:', error);
-      }
-    };
-
-    initializeApp();
     setTimeout(() => {
       setIsInitialLoading(false);
     }, 1500);
 
     const handleClickOutside = () => setActiveMenuPostId(null);
     window.addEventListener('click', handleClickOutside);
-    return () => window.removeEventListener('click', handleClickOutside);
+
+    return () => {
+      window.removeEventListener('click', handleClickOutside);
+      clearInterval(syncInterval);
+    };
   }, [])
 
   const validateField = (name, value) => {
