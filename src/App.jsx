@@ -57,13 +57,14 @@ function App() {
         // Enrich posts with user data if missing
         const enrichedPosts = rawPosts.map(post => {
           if (!post.user && post.userId) {
-            const postUser = usersData.find(u => u.id === post.userId);
+            const postUser = usersData.find(u => (u._id === post.userId || u.id === post.userId));
             if (postUser) {
               return {
                 ...post,
                 user: postUser.name,
                 handle: postUser.handle,
-                avatar: postUser.avatarUrl
+                avatar: postUser.avatarUrl,
+                userId: postUser._id // Unificar para _id
               };
             }
           }
@@ -187,7 +188,7 @@ function App() {
   const createPost = async () => {
     if (!newPostContent.trim() && !newPostImage) return
     const post = {
-      id: Date.now(),
+      userId: user._id || user.id, // CRITICAL: Enviar o ID do utilizador
       user: user.name,
       handle: user.handle,
       content: newPostContent,
@@ -195,18 +196,20 @@ function App() {
       imageUrl: newPostImage || '',
       likes: 0,
       liked: false,
-      comments: 0,
+      comments: [],
       time: 'Agora',
       isPinned: false
     }
     try {
-      await apiClient.post('/posts', post)
-      setPosts([post, ...posts].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)))
+      const savedPost = await apiClient.post('/posts', post)
+      // Usar o post retornado pelo server (que tem o ID real do MongoDB)
+      setPosts([savedPost, ...posts].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)))
       setNewPostContent('')
       setNewPostImage(null)
       setActiveMenuPostId(null)
     } catch (error) {
       console.error('Erro ao publicar:', error)
+      alert('Erro ao publicar. Verifica a tua ligação.')
     }
   }
 
@@ -249,7 +252,7 @@ function App() {
 
   const handleFollow = async (targetId) => {
     try {
-      const res = await apiClient.post(`/user/${targetId}/follow`, { userId: user.id });
+      const res = await apiClient.post(`/user/${targetId}/follow`, { userId: user._id || user.id });
       if (res.success) {
         setUser(res.user);
         localStorage.setItem('tywaky_user', JSON.stringify(res.user));
@@ -261,7 +264,7 @@ function App() {
 
   const handleUnfollow = async (targetId) => {
     try {
-      const res = await apiClient.post(`/user/${targetId}/unfollow`, { userId: user.id });
+      const res = await apiClient.post(`/user/${targetId}/unfollow`, { userId: user._id || user.id });
       if (res.success) {
         setUser(res.user);
         localStorage.setItem('tywaky_user', JSON.stringify(res.user));
@@ -289,20 +292,31 @@ function App() {
     }
   };
 
-  const toggleLike = (postId) => {
-    // Para protótipo, o like ainda pode ser local no estado, 
-    // mas num backend real faríamos post para /posts/:id/like
+  const toggleLike = async (postId) => {
+    // Optimistic Update
+    const originalPosts = [...posts];
     setPosts(posts.map(p => {
-      if (p.id === postId) {
+      const pid = p._id || p.id;
+      if (pid === postId) {
+        const isCurrentlyLiked = p.likedBy?.includes(user._id || user.id);
         return {
           ...p,
-          likes: p.liked ? p.likes - 1 : p.likes + 1,
-          liked: !p.liked
-        }
+          likes: isCurrentlyLiked ? Math.max(0, p.likes - 1) : p.likes + 1,
+          likedBy: isCurrentlyLiked
+            ? p.likedBy.filter(id => id !== (user._id || user.id))
+            : [...(p.likedBy || []), (user._id || user.id)]
+        };
       }
-      return p
-    }))
-  }
+      return p;
+    }));
+
+    try {
+      await apiClient.post(`/posts/${postId}/like`, { userId: user._id || user.id });
+    } catch (err) {
+      console.error('Erro ao curtir:', err);
+      setPosts(originalPosts); // Rollback on error
+    }
+  };
 
   const openEditModal = () => {
     setEditData({
@@ -638,7 +652,7 @@ function App() {
         ) : (
           <ProfileView
             user={viewedProfile || user}
-            isOwnProfile={!viewedProfile || viewedProfile.id === user.id}
+            isOwnProfile={!viewedProfile || (viewedProfile._id || viewedProfile.id) === (user._id || user.id)}
             currentUser={user}
             posts={posts}
             activeMenuPostId={activeMenuPostId}

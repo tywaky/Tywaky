@@ -291,8 +291,8 @@ app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
 app.put('/api/user/update', async (req, res) => {
     const updatedData = req.body;
     try {
-        const user = await User.findOneAndUpdate(
-            { id: updatedData.id }, // Using legacy ID for now to match frontend if not converted
+        const user = await User.findByIdAndUpdate(
+            updatedData._id || updatedData.id,
             { $set: updatedData },
             { new: true }
         );
@@ -336,8 +336,8 @@ app.post('/api/user/:id/follow', async (req, res) => {
     const { id: targetId } = req.params;
     const { userId } = req.body;
     try {
-        const user = await User.findOne({ id: userId });
-        const target = await User.findOne({ id: targetId });
+        const user = await User.findById(userId);
+        const target = await User.findById(targetId);
 
         if (user && target) {
             if (!user.followingIds.includes(String(targetId))) {
@@ -360,8 +360,8 @@ app.post('/api/user/:id/unfollow', async (req, res) => {
     const { id: targetId } = req.params;
     const { userId } = req.body;
     try {
-        const user = await User.findOne({ id: userId });
-        const target = await User.findOne({ id: targetId });
+        const user = await User.findById(userId);
+        const target = await User.findById(targetId);
 
         if (user && target) {
             if (user.followingIds && user.followingIds.includes(String(targetId))) {
@@ -392,9 +392,38 @@ app.get('/api/posts', async (req, res) => {
 
 app.post('/api/posts', async (req, res) => {
     try {
-        const post = new Post({ ...req.body, comments: [] });
+        // Garantir que o userId está presente (vem do frontend ou token)
+        const postData = req.body;
+        if (!postData.userId) return res.status(400).json({ success: false, message: 'ID de utilizador em falta' });
+
+        const post = new Post({ ...postData, comments: [] });
         await post.save();
         res.json(post);
+    } catch (error) {
+        console.error('Erro ao Criar Post:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Like/Unlike Toggle
+app.post('/api/posts/:id/like', async (req, res) => {
+    const { id } = req.params;
+    const { userId } = req.body;
+    try {
+        const post = await Post.findById(id);
+        if (!post) return res.status(404).json({ success: false, message: 'Post não encontrado' });
+
+        const likedIndex = post.likedBy.indexOf(String(userId));
+        if (likedIndex === -1) {
+            post.likedBy.push(String(userId));
+            post.likes += 1;
+        } else {
+            post.likedBy.splice(likedIndex, 1);
+            post.likes = Math.max(0, post.likes - 1);
+        }
+
+        await post.save();
+        res.json({ success: true, likes: post.likes, liked: likedIndex === -1 });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

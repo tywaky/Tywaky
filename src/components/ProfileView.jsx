@@ -19,7 +19,10 @@ const ProfileView = ({
     handleUnfollow,
     handleViewProfile
 }) => {
-    const isFollowing = currentUser?.followingIds?.includes(String(user?.id));
+    const isFollowing = currentUser?.followingIds?.includes(String(user?._id || user?.id));
+    const normalizedUserId = user?._id || user?.id;
+    const normalizedCurrentUserId = currentUser?._id || currentUser?.id;
+    const effectiveIsOwnProfile = isOwnProfile || normalizedUserId === normalizedCurrentUserId;
 
     return (
         <div className="profile-view">
@@ -39,11 +42,11 @@ const ProfileView = ({
                         <h2 style={{ margin: 0 }}>{user?.name}</h2>
                         <span style={{ color: 'var(--text-muted)' }}>{user?.handle}</span>
                     </div>
-                    {isOwnProfile ? (
+                    {effectiveIsOwnProfile ? (
                         <button onClick={openEditModal} className="tool-btn" style={{ border: '1px solid var(--glass-border)', padding: '0.6rem 1.5rem', borderRadius: '12px' }}>Editar Perfil</button>
                     ) : (
                         <button
-                            onClick={() => isFollowing ? handleUnfollow(user.id) : handleFollow(user.id)}
+                            onClick={() => isFollowing ? handleUnfollow(normalizedUserId) : handleFollow(normalizedUserId)}
                             className={`tool-btn ${isFollowing ? '' : 'active'}`}
                             style={{
                                 background: isFollowing ? 'transparent' : 'white',
@@ -80,13 +83,14 @@ const ProfileView = ({
 
             <div className="profile-posts" style={{ marginTop: '2rem' }}>
                 <h4 style={{ marginBottom: '1.5rem', paddingLeft: '1rem' }}>
-                    {isOwnProfile ? 'As tuas publicações' : `Publicações de ${user?.name}`}
+                    {effectiveIsOwnProfile ? 'As tuas publicações' : `Publicações de ${user?.name}`}
                 </h4>
-                {posts.filter(p => p.handle === user?.handle).length > 0 ? (
-                    posts.filter(p => p.handle === user?.handle).map(post => (
+                {posts.filter(p => (p.userId === normalizedUserId || p.handle === user?.handle)).length > 0 ? (
+                    posts.filter(p => (p.userId === normalizedUserId || p.handle === user?.handle)).map(post => (
                         <PostComponent
-                            key={post.id}
+                            key={post._id || post.id}
                             post={post}
+                            currentUser={currentUser}
                             activeMenuPostId={activeMenuPostId}
                             setActiveMenuPostId={setActiveMenuPostId}
                             togglePin={togglePin}
@@ -100,7 +104,7 @@ const ProfileView = ({
                     ))
                 ) : (
                     <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-muted)' }}>
-                        <p>{isOwnProfile ? 'Aqui aparecerão os teus posts.' : 'Este utilizador ainda não tem publicações.'}</p>
+                        <p>{effectiveIsOwnProfile ? 'Aqui aparecerão os teus posts.' : 'Este utilizador ainda não tem publicações.'}</p>
                     </div>
                 )}
             </div>
