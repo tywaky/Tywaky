@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../services/api';
 
-const AdminPanel = ({ currentUser }) => {
+const AdminPanel = ({ currentUser, handleViewProfile }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState(null);
@@ -32,7 +32,8 @@ const AdminPanel = ({ currentUser }) => {
                     setMessage({ type: 'success', text: `Utilizador ${userName} eliminado.` });
                     setUsers(users.filter(u => u._id !== userId));
                 }
-            } catch (err) {
+            } catch (error) {
+                console.error('Erro ao eliminar:', error);
                 setMessage({ type: 'error', text: 'Erro ao eliminar utilizador.' });
             }
         }
@@ -46,7 +47,8 @@ const AdminPanel = ({ currentUser }) => {
                 setMessage({ type: 'success', text: `Conta de ${userName} suspensa.` });
                 fetchUsers();
             }
-        } catch (err) {
+        } catch (error) {
+            console.error('Erro ao banir:', error);
             setMessage({ type: 'error', text: 'Erro ao banir conta.' });
         }
     };
@@ -58,7 +60,8 @@ const AdminPanel = ({ currentUser }) => {
                 setMessage({ type: 'success', text: `Conta de ${userName} reativada.` });
                 fetchUsers();
             }
-        } catch (err) {
+        } catch (error) {
+            console.error('Erro ao desbanir:', error);
             setMessage({ type: 'error', text: 'Erro ao liberar conta.' });
         }
     };
@@ -75,20 +78,22 @@ const AdminPanel = ({ currentUser }) => {
                     setMessage({ type: 'success', text: `IP ${ip} foi colocado na lista negra.` });
                     fetchUsers();
                 }
-            } catch (err) {
+            } catch (error) {
+                console.error('Erro ao banir IP:', error);
                 setMessage({ type: 'error', text: 'Erro ao banir IP.' });
             }
         }
     };
 
-    const handleUnbanIp = async (userId, userName, ip) => {
+    const handleUnbanIp = async (userId, userName) => {
         try {
             const res = await apiClient.post('/admin/unban/ip', { userId });
             if (res.success) {
                 setMessage({ type: 'success', text: `IP de ${userName} foi libertado.` });
                 fetchUsers();
             }
-        } catch (err) {
+        } catch (error) {
+            console.error('Erro ao desbanir IP:', error);
             setMessage({ type: 'error', text: 'Erro ao libertar IP.' });
         }
     };
@@ -144,10 +149,14 @@ const AdminPanel = ({ currentUser }) => {
                                     backgroundColor: isAccountBanned ? 'rgba(248, 113, 113, 0.05)' : 'transparent'
                                 }}>
                                     <td style={{ padding: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                        <div
+                                            style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }}
+                                            onClick={() => handleViewProfile(u.handle)}
+                                            title={`Ver perfil de ${u.name}`}
+                                        >
                                             <div className="avatar-mini-circle" style={{
                                                 width: '40px', height: '40px', borderRadius: '50%',
-                                                backgroundImage: u.avatarUrl ? `url(${u.avatarUrl})` : '',
+                                                backgroundImage: u.avatarUrl ? `url(${u.avatarUrl})` : 'linear-gradient(45deg, var(--primary), var(--accent))',
                                                 backgroundColor: 'var(--primary)', backgroundSize: 'cover'
                                             }}></div>
                                             <div>

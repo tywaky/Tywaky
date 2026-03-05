@@ -34,7 +34,7 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Load/Refresh Data
-  const fetchData = async (isInitial = false) => {
+  const fetchData = async () => {
     try {
       const savedUser = localStorage.getItem('tywaky_user');
       const postsData = await apiClient.get('/posts');
@@ -50,6 +50,13 @@ function App() {
           localStorage.setItem('tywaky_user', JSON.stringify(currentUserData));
         }
       }
+
+      // Refresh viewed profile if active
+      setViewedProfile(prev => {
+        if (!prev) return null;
+        const updatedViewed = usersData.find(u => u.handle === prev.handle || u.email === prev.email);
+        return updatedViewed || prev;
+      });
 
       const FallbackPosts = [];
       const rawPosts = (Array.isArray(postsData) && postsData.length > 0 ? postsData : FallbackPosts);
@@ -79,7 +86,7 @@ function App() {
 
   useEffect(() => {
     // Initial Load
-    fetchData(true);
+    fetchData();
 
     // Polling Interval: Refresh every 15 seconds for "Fluidity"
     const syncInterval = setInterval(() => {
@@ -663,7 +670,7 @@ function App() {
             </section>
           </>
         ) : currentView === 'admin' ? (
-          <AdminPanel currentUser={user} />
+          <AdminPanel currentUser={user} handleViewProfile={handleViewProfile} />
         ) : (
           <ProfileView
             user={viewedProfile || user}
