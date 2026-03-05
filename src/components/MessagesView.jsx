@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../services/api';
 
-const MessagesView = ({ user }) => {
+const MessagesView = ({ user, initialRecipient }) => {
     const [conversations, setConversations] = useState([]);
     const [activeConversation, setActiveConversation] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -12,6 +12,15 @@ const MessagesView = ({ user }) => {
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
+
+    useEffect(() => {
+        if (initialRecipient) {
+            setActiveConversation({
+                userId: initialRecipient._id || initialRecipient.id,
+                user: initialRecipient
+            });
+        }
+    }, [initialRecipient]);
 
     useEffect(() => {
         fetchConversations();

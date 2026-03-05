@@ -9,6 +9,7 @@ import ProfileView from './components/ProfileView'
 import Modals from './components/Modals'
 import AdminPanel from './components/AdminPanel'
 import MessagesView from './components/MessagesView'
+import RightSidebar from './components/RightSidebar'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -33,6 +34,7 @@ function App() {
   const [authData, setAuthData] = useState({ name: '', handle: '', email: '', password: '', confirmPassword: '' })
   const [authErrors, setAuthErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [activeChatUser, setActiveChatUser] = useState(null)
 
   // Load/Refresh Data
   const fetchData = async () => {
@@ -696,9 +698,9 @@ function App() {
             </section>
           </>
         ) : currentView === 'messages' ? (
-          <MessagesView user={user} />
+          <MessagesView user={user} initialRecipient={activeChatUser} />
         ) : user?.isAdmin && currentView === 'admin' ? (
-          <AdminPanel user={user} setViewedProfile={setViewedProfile} setCurrentView={setCurrentView} />
+          <AdminPanel currentUser={user} handleViewProfile={handleViewProfile} />
         ) : (
           <ProfileView
             user={viewedProfile || user}
@@ -723,7 +725,13 @@ function App() {
         )}
       </main>
 
-      <Trending handleViewProfile={handleViewProfile} allUsers={allUsers} currentUser={user} />
+      <RightSidebar
+        currentUser={user}
+        allUsers={allUsers}
+        setCurrentView={setCurrentView}
+        handleViewProfile={handleViewProfile}
+        setActiveChatUser={setActiveChatUser}
+      />
 
       <Modals
         isEditingProfile={isEditingProfile}
