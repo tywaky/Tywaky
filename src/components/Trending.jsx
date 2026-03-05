@@ -1,11 +1,7 @@
 import React from 'react';
 
 const Trending = ({ handleViewProfile, allUsers = [], currentUser }) => {
-    const trends = [
-        { cat: 'Tecnologia • Tendência', title: '#AI #Future', posts: '12K' },
-        { cat: 'Portugal • Fado', title: 'Ana Moura', posts: '5.4K' },
-        { cat: 'Design • Popular', title: 'Glassmorphism 2026', posts: '8.2K' }
-    ];
+    const trends = [];
 
     // Sugerir utilizadores que o utilizador atual ainda não segue
     const suggestions = allUsers

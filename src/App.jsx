@@ -49,13 +49,9 @@ function App() {
         const usersData = await apiClient.get('/users');
         setAllUsers(usersData);
 
-        const FallbackPosts = [
-          { id: 1, user: 'Ana Martins', handle: '@ana_m', content: 'Acabei de lançar o meu novo projeto usando esta plataforma! A experiência é incrível. ✨', likes: 124, liked: false, comments: 12, time: '2h', imageUrl: '', isPinned: false },
-          { id: 2, user: 'Carlos Tech', handle: '@carlostech', content: 'Alguém mais está a explorar as novas APIs de Web3? Estou impressionado com a facilidade de integração.', likes: 89, liked: false, comments: 45, time: '4h', imageUrl: '', isPinned: false },
-          { id: 3, user: 'Mariana Silva', handle: '@mariana_s', content: 'Bom dia mundo! Que o vosso código seja limpo e os vossos deploys sem bugs. ☕🚀', likes: 256, liked: true, comments: 18, time: '6h', imageUrl: '', isPinned: false }
-        ];
+        const FallbackPosts = [];
 
-        const rawPosts = (postsData.length > 0 ? postsData : FallbackPosts);
+        const rawPosts = (Array.isArray(postsData) && postsData.length > 0 ? postsData : FallbackPosts);
 
         // Enrich posts with user data if missing
         const enrichedPosts = rawPosts.map(post => {
