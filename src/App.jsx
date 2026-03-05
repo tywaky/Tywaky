@@ -633,6 +633,8 @@ function App() {
               )}
             </section>
           </>
+        ) : currentView === 'admin' ? (
+          <AdminPanel currentUser={user} />
         ) : (
           <ProfileView
             user={viewedProfile || user}
