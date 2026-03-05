@@ -196,4 +196,65 @@ O Tywaky obedece à estrutura de componentes React segregados, garantindo render
 A salvaguarda repousa pelo uso de dupla autenticação nos requests: a retenção dos visuais básicos em `localStorage('tywaky_user')` e a camada intransponível em `localStorage('tywaky_token')`. Todas as senhas contêm *salts* (`bcrypt`) alojados na API local em Express.js + JSON file storage, operando num porto backend próprio `(localhost:5000)` e servindo um frontend fluido `(localhost:5173)`. O Tywaky transitou de um Mock para uma rede conectável e defensiva robusta.
 
 ---
-*Documento atualizado em 2026-03-05 16:58:00*
+
+## 🚀 Fase 13: Cloud Deployment & Production Readiness (v3.0)
+
+### 2026-03-05
+
+### 13.1 Migração para Cloud (MongoDB Atlas)
+
+- **Base de Dados:** Transição total de ficheiro JSON local para base de dados NoSQL na nuvem.
+- **Persistência:** Garantida a permanência de dados 24/7 sem dependência de hardware local.
+- **Limpeza de Produção:** Realizado reset total à base de dados para garantir um lançamento "limpo" para utilizadores reais.
+
+### 13.2 Hosting & Infraestrutura (Render & Vercel)
+
+- **Backend (Render):** API Node.js/Express alojada em `https://tywaky-backend.onrender.com`. Configurada via Blueprints (`render.yaml`).
+- **Frontend (Vercel):** Aplicação React/Vite alojada em `https://tywaky.vercel.app`. Conectada dinamicamente ao backend via variáveis de ambiente.
+- **CI/CD:** Pipeline automatizado via GitHub — qualquer "push" para a branch `main` atualiza o site automaticamente em 60 segundos.
+
+### 13.3 Detalhes Técnicos e Chaves de Acesso
+>
+> [!IMPORTANT]
+> Manter estas credenciais em local seguro. Foram configuradas para o funcionamento imediato do ecossistema Tywaky Cloud.
+
+**1. GitHub (Repositório Central)**
+
+- **URL:** `https://github.com/tywaky/Tywaky`
+- **User:** `tywakysocial@gmail.com`
+- **Token de Acesso:** Gerido via Credenciais Git Locais.
+
+**2. MongoDB Atlas (Base de Dados)**
+
+- **URI de Ligação:** `mongodb+srv://tywakysocial_db_user:aSJqJYD5AVw1Tiy8@tywaky-db.vzzw1fg.mongodb.net/?appName=tywaky-db`
+- **User DB:** `tywakysocial_db_user`
+- **Senha DB:** `aSJqJYD5AVw1Tiy8`
+- **Cluster:** `tywaky-db`
+
+**3. Render (Backend Cloud)**
+
+- **URL API:** `https://tywaky-backend.onrender.com`
+- **Variáveis de Ambiente:**
+  - `MONGODB_URI`: (conforme acima)
+  - `JWT_SECRET`: `tywaky_super_secret_2026`
+  - `FRONTEND_URL`: `https://tywaky.vercel.app`
+
+**4. Vercel (Frontend Cloud)**
+
+- **URL Site:** `https://tywaky.vercel.app`
+- **Variável de Ambiente:**
+  - `VITE_API_URL`: `https://tywaky-backend.onrender.com`
+
+---
+
+## 🌍 Estrutura Final do Ecossistema (Tywaky v3.0)
+
+A rede social opera agora num modelo de **Cloud Distribuída**:
+
+1. **Camada de Dados (MongoDB Atlas):** Onde residem os utilizadores, posts, likes e seguidores.
+2. **Motor Lógico (Render):** O servidor processa a autenticação (JWT/Bcrypt) e serve os dados via API Rest.
+3. **Interface Visual (Vercel):** O site "bebe" os dados do servidor e oferece a experiência Glassmorphism fluida ao utilizador final.
+4. **Cérebro de Atualização (GitHub):** Onde o código está guardado e de onde os serviços de nuvem retiram as atualizações.
+
+---
+*Documento atualizado em 2026-03-05 19:25:00*
