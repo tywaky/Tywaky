@@ -12,13 +12,12 @@ const ProfileView = ({
     requestDeletePost,
     toggleLike,
     setCommentModal,
-    PostComponent,
     openEditModal,
     handleDeleteComment,
     handleFollow,
     handleUnfollow,
     handleViewProfile,
-    setCurrentView
+    setActiveChatUser
 }) => {
     const isFollowing = currentUser?.followingIds?.includes(String(user?._id || user?.id));
     const normalizedUserId = user?._id || user?.id;
@@ -49,7 +48,7 @@ const ProfileView = ({
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                             {!effectiveIsOwnProfile && (
                                 <button
-                                    onClick={() => setCurrentView('messages')}
+                                    onClick={() => setActiveChatUser(user)}
                                     className="tool-btn"
                                     style={{ border: '1px solid var(--glass-border)', padding: '0.6rem 1.5rem', borderRadius: '12px' }}
                                 >

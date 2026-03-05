@@ -8,8 +8,8 @@ import PostEditor from './components/PostEditor'
 import ProfileView from './components/ProfileView'
 import Modals from './components/Modals'
 import AdminPanel from './components/AdminPanel'
-import MessagesView from './components/MessagesView'
 import RightSidebar from './components/RightSidebar'
+import FloatingChat from './components/FloatingChat'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -697,8 +697,6 @@ function App() {
               )}
             </section>
           </>
-        ) : currentView === 'messages' ? (
-          <MessagesView user={user} initialRecipient={activeChatUser} />
         ) : user?.isAdmin && currentView === 'admin' ? (
           <AdminPanel currentUser={user} handleViewProfile={handleViewProfile} />
         ) : (
@@ -750,6 +748,14 @@ function App() {
         setCommentModal={setCommentModal}
         handleAddComment={handleAddComment}
       />
+
+      {activeChatUser && (
+        <FloatingChat
+          currentUser={user}
+          chatUser={activeChatUser}
+          onClose={() => setActiveChatUser(null)}
+        />
+      )}
     </div>
   )
 }

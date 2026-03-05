@@ -63,7 +63,6 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser
                                 className="contact-item"
                                 onClick={() => {
                                     setActiveChatUser(contact);
-                                    setCurrentView('messages');
                                 }}
                                 style={{
                                     display: 'flex',
