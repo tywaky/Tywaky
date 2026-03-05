@@ -98,7 +98,21 @@ const Post = ({
                 <button className="stat-item" onClick={() => {
                     setCommentModal({ isOpen: true, postId: post._id || post.id, content: '' });
                 }}>💬 {post.comments && typeof post.comments === 'object' ? post.comments.length : (post.comments || 0)}</button>
-                <button className="stat-item">🚀 Partilhar</button>
+                <button className="stat-item" onClick={() => {
+                    const postUrl = `${window.location.origin}/profile/${post.handle.replace('@', '')}/post/${post._id || post.id}`;
+                    navigator.clipboard.writeText(postUrl).then(() => {
+                        const btn = document.getElementById(`share-btn-${post._id || post.id}`);
+                        if (btn) {
+                            const originalText = btn.innerHTML;
+                            btn.innerHTML = '✅ Copiado!';
+                            btn.classList.add('active');
+                            setTimeout(() => {
+                                btn.innerHTML = originalText;
+                                btn.classList.remove('active');
+                            }, 2000);
+                        }
+                    });
+                }} id={`share-btn-${post._id || post.id}`}>🚀 Partilhar</button>
             </div>
 
             {post.comments && Array.isArray(post.comments) && post.comments.length > 0 && (
