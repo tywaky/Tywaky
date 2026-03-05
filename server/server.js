@@ -107,6 +107,15 @@ app.use(checkBan); // Aplicar verificação de banimento em todos os requests
 // Rotas API
 app.get('/api/health', (req, res) => res.json({ status: 'ok', online: true }));
 
+app.get('/api/debug/users', async (req, res) => {
+    try {
+        const users = await User.find({});
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Auth & User
 // Auth & User
 app.post('/api/auth/login', async (req, res) => {
@@ -289,21 +298,32 @@ app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
 });
 
 app.put('/api/user/update', async (req, res) => {
-    const updatedData = req.body;
-    try {
-        const user = await User.findByIdAndUpdate(
-            updatedData._id || updatedData.id,
-            { $set: updatedData },
-            { new: true }
-        );
+    const { _id, id, ...updateFields } = req.body;
+    const targetId = _id || id;
 
-        if (user) {
-            const { password: _, ...userWithoutPassword } = user.toObject();
-            res.json({ success: true, user: userWithoutPassword });
-        } else {
-            res.status(404).json({ success: false, message: 'Utilizador não encontrado' });
+    try {
+        // Find user first to ensure we have the correct state
+        const user = await User.findById(targetId);
+        if (!user) return res.status(404).json({ success: false, message: 'Utilizador não encontrado' });
+
+        // Update fields
+        Object.keys(updateFields).forEach(key => {
+            if (updateFields[key] !== undefined) {
+                user[key] = updateFields[key];
+            }
+        });
+
+        // Recalculate stats based on actual array lengths to fix ghost follows
+        if (user.followingIds) {
+            user.following = user.followingIds.length;
         }
+
+        await user.save();
+
+        const { password: _, ...userWithoutPassword } = user.toObject();
+        res.json({ success: true, user: userWithoutPassword });
     } catch (error) {
+        console.error('Erro ao atualizar utilizador:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
