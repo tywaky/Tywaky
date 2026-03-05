@@ -98,6 +98,21 @@ const AdminPanel = ({ currentUser, handleViewProfile }) => {
         }
     };
 
+    const handleFixStats = async () => {
+        if (window.confirm('Deseja recalcular as estatísticas de todos os utilizadores? Isto corrigirá contagens erradas de seguidores.')) {
+            try {
+                const res = await apiClient.post('/admin/system/fix-stats');
+                if (res.success) {
+                    setMessage({ type: 'success', text: 'Estatísticas sincronizadas com sucesso!' });
+                    fetchUsers();
+                }
+            } catch (error) {
+                console.error('Erro ao sincronizar:', error);
+                setMessage({ type: 'error', text: 'Erro ao sincronizar estatísticas.' });
+            }
+        }
+    };
+
     // Identificar IPs duplicados
     const ipCounts = users.reduce((acc, user) => {
         const ip = user.registrationIp;
