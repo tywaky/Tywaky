@@ -9,7 +9,7 @@ services:
     startCommand: node server.js
     envVars:
       - key: MONGODB_URI
-        placeholder: "Cole aqui o seu link do MongoDB Atlas"
+        value: " COLE_AVISO: _link_do_mongodb_aqui"
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
