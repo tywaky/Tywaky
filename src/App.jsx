@@ -611,8 +611,6 @@ function App() {
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{user.handle}</span>
                 </div>
 
-                <p style={{ margin: '1rem 0', fontSize: '1rem', color: 'rgba(255,255,255,0.9)' }}>{user.bio}</p>
-
                 <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.9rem' }}>
                   <span><strong>{user.following}</strong> <span style={{ color: 'var(--text-muted)' }}>A seguir</span></span>
                   <span><strong>{user.followers}</strong> <span style={{ color: 'var(--text-muted)' }}>Seguidores</span></span>
