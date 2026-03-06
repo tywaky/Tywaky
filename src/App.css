@@ -849,3 +849,58 @@
     transform: translateY(0);
   }
 }
+
+/* Notification System Styles */
+.notifications-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.notification-item {
+  transition: transform 0.2s, background 0.2s;
+}
+
+.notification-item:hover {
+  transform: translateX(5px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.notification-item.unread {
+  position: relative;
+}
+
+.notification-item.unread::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--primary);
+  border-radius: 4px 0 0 4px;
+}
+
+.unread-badge {
+  background: var(--accent);
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+@keyframes notificationIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-item {
+  animation: notificationIn 0.3s ease-out forwards;
+}

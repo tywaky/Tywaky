@@ -9,6 +9,8 @@ import ProfileView from './components/ProfileView'
 import Modals from './components/Modals'
 import AdminPanel from './components/AdminPanel'
 import RightSidebar from './components/RightSidebar'
+import NotificationsView from './components/NotificationsView'
+import { io } from 'socket.io-client'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -34,6 +36,9 @@ function App() {
   const [authErrors, setAuthErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeChatUser, setActiveChatUser] = useState(null)
+  const [socket, setSocket] = useState(null)
+  const [notifications, setNotifications] = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
 
   // Load/Refresh Data
   const fetchData = async () => {
@@ -86,14 +91,33 @@ function App() {
     }
   };
 
+  const fetchNotifications = async () => {
+    if (!user) return;
+    try {
+      const res = await apiClient.get(`/notifications?userId=${user._id || user.id}`);
+      if (res.success) {
+        setNotifications(res.notifications);
+        setUnreadCount(res.notifications.filter(n => !n.read).length);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar notificações:', err);
+    }
+  };
+
+  const markNotificationsAsRead = async () => {
+    if (!user || unreadCount === 0) return;
+    try {
+      await apiClient.put('/api/notifications/read', { userId: user._id || user.id });
+      setUnreadCount(0);
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Erro ao marcar notificações como lidas:', err);
+    }
+  };
+
   useEffect(() => {
     // Initial Load
     fetchData();
-
-    // Polling Interval: Refresh every 15 seconds for "Fluidity"
-    const syncInterval = setInterval(() => {
-      fetchData();
-    }, 15000);
 
     setTimeout(() => {
       setIsInitialLoading(false);
@@ -104,9 +128,45 @@ function App() {
 
     return () => {
       window.removeEventListener('click', handleClickOutside);
-      clearInterval(syncInterval);
     };
   }, [])
+
+  // Socket Connection & Listeners
+  useEffect(() => {
+    if (user) {
+      const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+      setSocket(newSocket);
+
+      newSocket.emit('setup', user._id || user.id);
+      fetchNotifications();
+
+      newSocket.on('notification_received', (newNotif) => {
+        setNotifications(prev => [newNotif, ...prev]);
+        setUnreadCount(prev => prev + 1);
+
+        // Opcional: Efeito sonoro ou toast
+        console.log('Nova notificação:', newNotif);
+      });
+
+      newSocket.on('message_received', (newMsg) => {
+        // Se a vista atual for 'feed' ou outra, podemos querer mostrar um badge ou notificação
+        console.log('Nova mensagem via socket:', newMsg);
+        // Se o chat estiver aberto com este utilizador, ele já atualiza via polling ou listener próprio
+        // Mas podemos forçar refresh das conversas
+      });
+
+      newSocket.on('post_created', (newPost) => {
+        // Evitar duplicados se for o próprio autor (que já adiciona localmente)
+        setPosts(prev => {
+          const exists = prev.find(p => String(p._id || p.id) === String(newPost._id || newPost.id));
+          if (exists) return prev;
+          return [newPost, ...prev].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+        });
+      });
+
+      return () => newSocket.disconnect();
+    }
+  }, [user?._id, user?.id]);
 
   const validateField = (name, value) => {
     let error = '';
@@ -566,6 +626,7 @@ function App() {
         user={user}
         handleLogout={handleLogout}
         setViewedProfile={setViewedProfile}
+        unreadCount={unreadCount}
       />
 
       <main className="main-content">
@@ -694,6 +755,12 @@ function App() {
               )}
             </section>
           </>
+        ) : currentView === 'notifications' ? (
+          <NotificationsView
+            notifications={notifications}
+            markNotificationsAsRead={markNotificationsAsRead}
+            handleViewProfile={handleViewProfile}
+          />
         ) : user?.isAdmin && currentView === 'admin' ? (
           <AdminPanel currentUser={user} handleViewProfile={handleViewProfile} />
         ) : (

@@ -330,15 +330,40 @@ A rede social opera agora num modelo de **Cloud Distribuída e Automática**:
 - **Minimalismo no Feed:** Remoção definitiva da caixa de texto estática ("Bio") que criava ruído no card de perfil principal do utilizador (em `App.jsx`), redirecionando a atenção para o painel dinâmico em *ticker* criado anteriormente.
 
 ---
+---
 
-## 🌍 Estrutura Final do Ecossistema (Tywaky v5.0)
+## 🔔 Fase 17: Real-Time Revolution & WebSockets (v6.0)
 
-Com a versão 5.0, a Tywaky transformou-se numa plataforma moderna de "Single View Experience":
+### 2026-03-06
 
-1. **Navegação à Esquerda (Sidebar):** Organizada e minimalista.
-2. **Conteúdo ao Centro:** Focado no feed e na identidade social.
-3. **Contactos à Direita (RightSidebar):** Sempre acessível para mensagens rápidas.
-4. **Chat Dinâmico (FloatingChat):** Camada de conversação flutuante que não bloqueia a exploração.
+### 17.1 Adeus ao "Polling"
+
+- **Migração Tecnológica:** Substituição total do sistema de pedidos repetitivos (a cada 15s) pela tecnologia **WebSockets (Socket.io)**.
+- **Eficiência Extrema:** Redução drástica no consumo de recursos do servidor e bateria em dispositivos móveis. A rede agora é 100% reativa.
+
+### 17.2 Sistema Global de Notificações
+
+- **Central de Alertas:** Implementação do ícone da campainha 🔔 com contador dinâmico de notificações não lidas.
+- **Eventos Monitorizados:** Alertas instantâneos para:
+  - ❤️ Quando alguém gosta de um post.
+  - 💬 Quando alguém comenta uma publicação.
+  - 👤 Quando um novo seguidor se junta à rede.
+- **NotificationsView:** Nova vista dedicada para gerir e ler o histórico de interações sociais.
+
+### 17.3 Instant Feed & Messaging
+
+- **Push de Conteúdo:** Novas publicações aparecem instantaneamente no feed de todos os utilizadores online sem necessidade de recarregar a página.
+- **Messenger Real-Time:** As mensagens diretas agora são entregues no milissegundo em que são enviadas, eliminando qualquer atraso na conversação.
 
 ---
-*Documento atualizado em 2026-03-05 23:50:00*
+
+## 🌍 Estrutura Final do Ecossistema (Tywaky v6.0)
+
+A Tywaky atingiu a maturidade técnica total com uma arquitetura **Event-Driven**:
+
+1. **Backend Reativo:** Servidor Node.js agora opera como um hub de eventos em tempo real.
+2. **Frontend Inteligente:** Otimizado para ouvir e reagir a mudanças de estado globais instantaneamente.
+3. **UX Instantânea:** Interação social sem barreiras de carregamento, tornando a experiência comparável às maiores redes sociais do mundo.
+
+---
+*Documento atualizado em 2026-03-06 10:30:00*

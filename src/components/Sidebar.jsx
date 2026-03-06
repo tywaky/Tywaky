@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Sidebar = ({ currentView, setCurrentView, user, handleLogout, setViewedProfile }) => {
+const Sidebar = ({ currentView, setCurrentView, user, handleLogout, setViewedProfile, unreadCount }) => {
     return (
         <aside className="sidebar">
             <div
@@ -23,7 +23,32 @@ const Sidebar = ({ currentView, setCurrentView, user, handleLogout, setViewedPro
                     <span>🏠</span> Início
                 </button>
                 <button className="nav-link"><span>🔍</span> Explorar</button>
-                <button className="nav-link"><span>🔔</span> Notificações</button>
+                <button
+                    className={`nav-link ${currentView === 'notifications' ? 'active' : ''}`}
+                    onClick={() => {
+                        setViewedProfile(null);
+                        setCurrentView('notifications');
+                    }}
+                    style={{ position: 'relative' }}
+                >
+                    <span>🔔</span> Notificações
+                    {unreadCount > 0 && (
+                        <span style={{
+                            position: 'absolute',
+                            top: '5px',
+                            left: '25px',
+                            background: 'var(--accent)',
+                            color: 'white',
+                            fontSize: '0.65rem',
+                            padding: '2px 6px',
+                            borderRadius: '10px',
+                            fontWeight: 'bold',
+                            border: '2px solid var(--bg-dark)'
+                        }}>
+                            {unreadCount}
+                        </span>
+                    )}
+                </button>
                 <button
                     onClick={() => {
                         setViewedProfile(null);

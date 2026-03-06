@@ -11,6 +11,9 @@ const User = require('./models/User');
 const Post = require('./models/Post');
 const Message = require('./models/Message');
 const BannedIp = require('./models/BannedIp');
+const Notification = require('./models/Notification');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 // Middleware para verificar se o utilizador ou IP está banido
@@ -88,8 +91,61 @@ connectDB();
 const SALT_ROUNDS = 10;
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: process.env.FRONTEND_URL || '*',
+        methods: ['GET', 'POST']
+    }
+});
 const PORT = process.env.PORT || 5000;
 const DATA_FILE = path.join(__dirname, 'data.json');
+
+// Mapa de utilizadores online: userId -> socketId
+const onlineUsers = new Map();
+
+io.on('connection', (socket) => {
+    socket.on('setup', (userId) => {
+        socket.join(userId);
+        onlineUsers.set(userId, socket.id);
+        console.log(`📡 Socket: Utilizador ${userId} conectado.`);
+        socket.emit('connected');
+    });
+
+    socket.on('disconnect', () => {
+        // Remover utilizador do mapa ao desconectar
+        for (let [userId, socketId] of onlineUsers.entries()) {
+            if (socketId === socket.id) {
+                onlineUsers.delete(userId);
+                console.log(`🔌 Socket: Utilizador ${userId} desconectado.`);
+                break;
+            }
+        }
+    });
+});
+
+// Helper para enviar notificações em tempo real
+const sendNotification = async (recipientId, senderId, type, postId = null, content = '') => {
+    try {
+        if (String(recipientId) === String(senderId)) return;
+
+        const notification = new Notification({
+            recipient: recipientId,
+            sender: senderId,
+            type,
+            postId,
+            content
+        });
+        await notification.save();
+
+        const populatedNotification = await Notification.findById(notification._id)
+            .populate('sender', 'name handle avatarUrl');
+
+        io.to(String(recipientId)).emit('notification_received', populatedNotification);
+    } catch (err) {
+        console.error('Erro ao enviar notificação:', err);
+    }
+};
 
 // Middleware
 app.use(helmet());
@@ -409,6 +465,8 @@ app.post('/api/user/:id/follow', async (req, res) => {
                 target.followers += 1;
                 await user.save();
                 await target.save();
+                // Notificar utilizador seguido
+                await sendNotification(targetId, userId, 'follow');
             }
             res.json({ success: true, user });
         } else {
@@ -461,6 +519,11 @@ app.post('/api/posts', async (req, res) => {
 
         const post = new Post({ ...postData, comments: [] });
         await post.save();
+
+        // Emitir novo post para todos os utilizadores (Real-time Feed)
+        const postWithUser = { ...post.toObject(), time: 'Agora' };
+        io.emit('post_created', postWithUser);
+
         res.json(post);
     } catch (error) {
         console.error('Erro ao Criar Post:', error);
@@ -486,6 +549,12 @@ app.post('/api/posts/:id/like', async (req, res) => {
         }
 
         await post.save();
+
+        // Notificar se foi um Like (não notifica se for deslike por agora para manter simples)
+        if (likedIndex === -1) {
+            await sendNotification(post.userId, userId, 'like', post._id);
+        }
+
         res.json({ success: true, likes: post.likes, liked: likedIndex === -1 });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -546,6 +615,10 @@ app.post('/api/posts/:id/comments', async (req, res) => {
         if (post) {
             post.comments.push(commentData);
             await post.save();
+
+            // Notificar autor do post sobre o comentário
+            await sendNotification(post.userId, commentData.userId, 'comment', post._id, commentData.content);
+
             res.json({ success: true, comment: commentData });
         } else {
             res.status(404).json({ success: false, message: 'Post não encontrado' });
@@ -589,6 +662,10 @@ app.post('/api/messages', async (req, res) => {
             content
         });
         await newMessage.save();
+
+        // Notificar recetor em tempo real se estiver online
+        io.to(String(receiverId)).emit('message_received', newMessage);
+
         res.status(201).json({ success: true, message: newMessage });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -644,6 +721,31 @@ app.get('/api/conversations', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Tywaky Backend a correr na porta ${PORT}`);
+// Endpoints de Notificações
+app.get('/api/notifications', async (req, res) => {
+    const { userId } = req.query;
+    try {
+        const notifications = await Notification.find({ recipient: userId })
+            .populate('sender', 'name handle avatarUrl')
+            .populate('postId', 'content')
+            .sort({ createdAt: -1 })
+            .limit(50);
+        res.json({ success: true, notifications });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+app.put('/api/notifications/read', async (req, res) => {
+    const { userId } = req.body;
+    try {
+        await Notification.updateMany({ recipient: userId, read: false }, { read: true });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+server.listen(PORT, () => {
+    console.log(`🚀 Tywaky Backend a correr na porta ${PORT} com WebSockets`);
 });
