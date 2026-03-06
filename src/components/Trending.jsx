@@ -1,8 +1,6 @@
 import React from 'react';
 
-const Trending = ({ handleViewProfile, allUsers = [], currentUser }) => {
-    const trends = [];
-
+const Trending = ({ handleViewProfile, allUsers = [], currentUser, trends = [], onTrendClick }) => {
     // Sugerir utilizadores que o utilizador atual ainda não segue
     const suggestions = allUsers
         .filter(u => {
@@ -17,11 +15,13 @@ const Trending = ({ handleViewProfile, allUsers = [], currentUser }) => {
             <div className="discovery-section" style={{ marginTop: '2rem' }}>
                 <div className="trending-card glass" style={{ marginBottom: '2rem' }}>
                     <h4 style={{ marginBottom: '1.5rem' }}>Tendências para ti</h4>
-                    {trends.map((trend, i) => (
-                        <div key={i} className="trend-item">
+                    {trends.length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Sem tendências de momento.</p>
+                    ) : trends.map((trend, i) => (
+                        <div key={i} className="trend-item" style={{ cursor: 'pointer' }} onClick={() => onTrendClick(trend.title)}>
                             <span className="trend-category">{trend.cat}</span>
-                            <span className="trend-title">{trend.title}</span>
-                            <span className="trend-category" style={{ fontSize: '0.7rem' }}>{trend.posts} posts</span>
+                            <span className="trend-title" style={{ color: 'var(--primary)' }}>{trend.title}</span>
+                            <span className="trend-category" style={{ fontSize: '0.7rem' }}>{trend.posts} publicações</span>
                         </div>
                     ))}
                 </div>

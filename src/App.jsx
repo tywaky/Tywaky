@@ -19,6 +19,7 @@ function App() {
   const [currentView, setCurrentView] = useState('feed')
   const [newPostContent, setNewPostContent] = useState('')
   const [mediaList, setMediaList] = useState([])
+  const [hashtagFilter, setHashtagFilter] = useState('')
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [editData, setEditData] = useState({ name: '', bio: '', avatarUrl: '', bannerUrl: '' })
   const [posts, setPosts] = useState([])
@@ -41,6 +42,14 @@ function App() {
   const [unreadCount, setUnreadCount] = useState(0)
 
   // Load/Refresh Data
+  useEffect(() => {
+    window.onHashtagClick = (tag) => {
+      setHashtagFilter(tag)
+      setCurrentView('feed')
+    }
+    return () => delete window.onHashtagClick
+  }, [])
+
   const fetchData = async () => {
     try {
       const savedUser = localStorage.getItem('tywaky_user');
@@ -255,6 +264,30 @@ function App() {
     setUser(null)
   }
 
+  // Calcular hashtags em destaque
+  const getTrendingTags = () => {
+    const counts = {}
+    posts.forEach(p => {
+      const tags = p.content.match(/#\w+/g) || []
+      tags.forEach(t => counts[t] = (counts[t] || 0) + 1)
+    })
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([tag, count]) => ({ title: tag, posts: count, cat: 'Tendência em Portugal' }))
+  }
+
+  const filteredPosts = posts.filter(p => {
+    if (hashtagFilter) {
+      return p.content.toLowerCase().includes(hashtagFilter.toLowerCase())
+    }
+    return true
+  }).filter(post =>
+    (post.content?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+    (post.user?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+    (post.handle?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+  );
+
   const handleMediaChange = (e) => {
     const files = Array.from(e.target.files);
     files.forEach(file => {
@@ -268,7 +301,7 @@ function App() {
   }
 
   const createPost = async () => {
-    if (!newPostContent.trim() && !newPostImage) return
+    if (!newPostContent.trim() && mediaList.length === 0) return // Changed newPostImage to mediaList.length === 0
     const post = {
       userId: user._id || user.id,
       user: user.name,
@@ -307,7 +340,7 @@ function App() {
     try {
       await apiClient.post(`/posts/${commentModal.postId}/comments`, newComment);
       setPosts(prevPosts => prevPosts.map(p => {
-        if (p.id === commentModal.postId) {
+        if (p._id === commentModal.postId || p.id === commentModal.postId) { // Added p._id check
           const currentComments = Array.isArray(p.comments) ? p.comments : [];
           return { ...p, comments: [...currentComments, newComment] };
         }
@@ -321,7 +354,7 @@ function App() {
     try {
       await apiClient.delete(`/posts/${postId}/comments/${commentId}`);
       setPosts(prevPosts => prevPosts.map(p => {
-        if (p.id === postId) {
+        if (p._id === postId || p.id === postId) { // Added p._id check
           const currentComments = Array.isArray(p.comments) ? p.comments : [];
           return { ...p, comments: currentComments.filter(c => c.id !== commentId) };
         }
@@ -378,7 +411,7 @@ function App() {
   };
 
   const handleViewProfile = async (handle) => {
-    if (handle === user.handle) {
+    if (user && handle === user.handle) { // Added user check
       setViewedProfile(null);
       setCurrentView('profile');
       return;
@@ -723,32 +756,41 @@ function App() {
                   </div>
                 ))
               ) : (
-                posts
-                  .filter(post =>
-                    (post.content?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-                    (post.user?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-                    (post.handle?.toLowerCase() || "").includes(searchTerm.toLowerCase())
-                  )
-                  .map(post => {
-                    const pid = post._id || post.id;
-                    return (
-                      <Post
-                        key={pid}
-                        post={post}
-                        currentUser={user}
-                        activeMenuPostId={activeMenuPostId}
-                        setActiveMenuPostId={setActiveMenuPostId}
-                        togglePin={togglePin}
-                        handleEditPost={handleEditPost}
-                        requestDeletePost={requestDeletePost}
-                        toggleLike={toggleLike}
-                        setCommentModal={setCommentModal}
-                        handleDeleteComment={handleDeleteComment}
-                        handleViewProfile={handleViewProfile}
-                        handleRepost={handleRepost}
-                      />
-                    );
-                  })
+                <>
+                  {hashtagFilter && (
+                    <div className="glass" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>A mostrar publicações com <strong>{hashtagFilter}</strong></span>
+                      <button onClick={() => setHashtagFilter('')} className="tool-btn" style={{ fontSize: '0.8rem' }}>Limpar Filtro</button>
+                    </div>
+                  )}
+
+                  {filteredPosts.length === 0 ? (
+                    <div className="glass" style={{ padding: '3rem', textAlign: 'center' }}>
+                      <p>Ainda não há nada para mostrar aqui.</p>
+                    </div>
+                  ) : (
+                    filteredPosts.map(post => {
+                      const pid = post._id || post.id;
+                      return (
+                        <Post
+                          key={pid}
+                          post={post}
+                          currentUser={user}
+                          activeMenuPostId={activeMenuPostId}
+                          setActiveMenuPostId={setActiveMenuPostId}
+                          togglePin={togglePin}
+                          handleEditPost={handleEditPost}
+                          requestDeletePost={requestDeletePost}
+                          toggleLike={toggleLike}
+                          setCommentModal={setCommentModal}
+                          handleDeleteComment={handleDeleteComment}
+                          handleViewProfile={handleViewProfile}
+                          handleRepost={handleRepost}
+                        />
+                      );
+                    })
+                  )}
+                </>
               )}
 
               {!isInitialLoading && visiblePosts < posts.length && (

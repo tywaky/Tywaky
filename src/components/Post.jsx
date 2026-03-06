@@ -17,6 +17,32 @@ const Post = ({
     const isLiked = post.likedBy?.includes(currentUser?._id || currentUser?.id);
     const isOwner = currentUser && (String(post.userId) === String(currentUser._id || currentUser.id) || post.handle === currentUser.handle);
 
+    // Função para detetar e transformar hashtags em spans clicáveis
+    const renderContentWithHashtags = (content) => {
+        if (!content) return null;
+        const parts = content.split(/(#\w+)/g);
+        return parts.map((part, i) => {
+            if (part.startsWith('#')) {
+                return (
+                    <span
+                        key={i}
+                        className="hashtag-link"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (typeof window.onHashtagClick === 'function') {
+                                window.onHashtagClick(part);
+                            }
+                        }}
+                        style={{ color: 'var(--primary)', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                        {part}
+                    </span>
+                );
+            }
+            return part;
+        });
+    };
+
     return (
         <article className={`post-card glass ${post.isRepost ? 'repost-card' : ''}`}>
             {post.isRepost && (
@@ -96,7 +122,7 @@ const Post = ({
                         📌 Publicação Fixada
                     </div>
                 )}
-                <p>{post.content}</p>
+                <p>{renderContentWithHashtags(post.content)}</p>
 
                 {/* Media Gallery / Carousel */}
                 {post.media && post.media.length > 0 ? (
