@@ -616,20 +616,7 @@ app.post('/api/posts/:id/react', async (req, res) => {
 
         // Notificação (apenas se for uma nova reação)
         if (!sameReaction && String(post.userId) !== String(userId)) {
-            const reactor = await User.findById(userId);
-            const newNotif = new Notification({
-                userId: post.userId,
-                fromUserId: userId,
-                fromUserName: reactor?.name || 'Alguém',
-                type: 'like', // Mantemos 'like' no tipo de notificação por agora para compatibilidade
-                postId: post._id,
-                read: false
-            });
-            await newNotif.save();
-            const targetSocketId = onlineUsers.get(String(post.userId));
-            if (targetSocketId) {
-                io.to(targetSocketId).emit('new_notification', newNotif);
-            }
+            await sendNotification(post.userId, userId, 'like', post._id);
         }
 
         res.json({ success: true, reactions: post.reactions });
