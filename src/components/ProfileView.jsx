@@ -83,20 +83,13 @@ const ProfileView = ({
                     )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '2rem', marginBottom: '3rem' }}>
+                <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
                     <div className="stat-badges">
                         <strong>{user?.following || 0}</strong> <span style={{ color: 'var(--text-muted)' }}>A seguir</span>
                     </div>
                     <div className="stat-badges">
                         <strong>{user?.followers || 0}</strong> <span style={{ color: 'var(--text-muted)' }}>Seguidores</span>
                     </div>
-                </div>
-
-                <div className="auth-tabs" style={{ justifyContent: 'flex-start', borderBottom: '1px solid var(--glass-border)', marginBottom: '2rem' }}>
-                    <button className="tab-btn active">Posts</button>
-                    <button className="tab-btn">Respostas</button>
-                    <button className="tab-btn">Media</button>
-                    <button className="tab-btn">Gostos</button>
                 </div>
             </div>
 
