@@ -518,11 +518,14 @@ app.get('/api/posts', async (req, res) => {
 
 app.post('/api/posts', async (req, res) => {
     try {
-        // Garantir que o userId está presente (vem do frontend ou token)
         const postData = req.body;
         if (!postData.userId) return res.status(400).json({ success: false, message: 'ID de utilizador em falta' });
 
-        const post = new Post({ ...postData, comments: [] });
+        const post = new Post({
+            ...postData,
+            comments: [],
+            media: postData.media || [] // Explicitly handle media if present
+        });
         await post.save();
 
         // Emitir novo post para todos os utilizadores (Real-time Feed)

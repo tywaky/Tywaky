@@ -97,7 +97,60 @@ const Post = ({
                     </div>
                 )}
                 <p>{post.content}</p>
-                {post.imageUrl && (
+
+                {/* Media Gallery / Carousel */}
+                {post.media && post.media.length > 0 ? (
+                    <div className="post-media-gallery" style={{ marginTop: '1rem', borderRadius: '12px', overflow: 'hidden' }}>
+                        {post.media.length === 1 ? (
+                            <div className="single-media-wrapper">
+                                {post.media[0].type === 'video' ? (
+                                    <video
+                                        src={post.media[0].url}
+                                        controls
+                                        className="post-video"
+                                        style={{ width: '100%', borderRadius: '12px' }}
+                                    />
+                                ) : (
+                                    <img src={post.media[0].url} alt="Post content" className="post-image" />
+                                )}
+                            </div>
+                        ) : (
+                            <div className="media-carousel" style={{
+                                display: 'flex',
+                                overflowX: 'auto',
+                                scrollSnapType: 'x mandatory',
+                                gap: '10px',
+                                paddingBottom: '10px'
+                            }}>
+                                {post.media.map((item, idx) => (
+                                    <div key={idx} style={{
+                                        minWidth: '100%',
+                                        scrollSnapAlign: 'start',
+                                        position: 'relative'
+                                    }}>
+                                        {item.type === 'video' ? (
+                                            <video src={item.url} controls className="post-video" style={{ width: '100%', borderRadius: '12px' }} />
+                                        ) : (
+                                            <img src={item.url} alt={`Media ${idx}`} className="post-image" style={{ width: '100%', height: 'auto', borderRadius: '12px' }} />
+                                        )}
+                                        <div className="media-indicator" style={{
+                                            position: 'absolute',
+                                            top: '10px',
+                                            right: '10px',
+                                            background: 'rgba(0,0,0,0.5)',
+                                            color: 'white',
+                                            padding: '2px 8px',
+                                            borderRadius: '10px',
+                                            fontSize: '0.7rem'
+                                        }}>
+                                            {idx + 1}/{post.media.length}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : post.imageUrl && (
                     <div className="post-image-wrapper">
                         <img src={post.imageUrl} alt="Post content" className="post-image" />
                     </div>

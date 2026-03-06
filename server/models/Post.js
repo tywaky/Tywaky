@@ -21,7 +21,11 @@ const postSchema = new mongoose.Schema({
     time: { type: String, default: "Agora" },
     isPinned: { type: Boolean, default: false },
     isRepost: { type: Boolean, default: false },
-    originalPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' }
+    originalPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', default: null },
+    media: [{
+        type: { type: String, enum: ['image', 'video'], default: 'image' },
+        url: { type: String, required: true }
+    }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Post', postSchema);

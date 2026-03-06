@@ -18,7 +18,7 @@ function App() {
   const [user, setUser] = useState(null)
   const [currentView, setCurrentView] = useState('feed')
   const [newPostContent, setNewPostContent] = useState('')
-  const [newPostImage, setNewPostImage] = useState(null)
+  const [mediaList, setMediaList] = useState([])
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [editData, setEditData] = useState({ name: '', bio: '', avatarUrl: '', bannerUrl: '' })
   const [posts, setPosts] = useState([])
@@ -255,26 +255,27 @@ function App() {
     setUser(null)
   }
 
-  const handlePostImageChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      const reader = new FileReader()
+  const handleMediaChange = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const type = file.type.startsWith('video/') ? 'video' : 'image';
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setNewPostImage(reader.result)
+        setMediaList(prev => [...prev.slice(0, 3), { type, url: reader.result }]); // Limit to 4 for demo
       }
-      reader.readAsDataURL(file)
-    }
+      reader.readAsDataURL(file);
+    });
   }
 
   const createPost = async () => {
     if (!newPostContent.trim() && !newPostImage) return
     const post = {
-      userId: user._id || user.id, // CRITICAL: Enviar o ID do utilizador
+      userId: user._id || user.id,
       user: user.name,
       handle: user.handle,
       content: newPostContent,
       avatar: user.avatarUrl,
-      imageUrl: newPostImage || '',
+      media: mediaList,
       likes: 0,
       liked: false,
       comments: [],
@@ -286,7 +287,7 @@ function App() {
       // Usar o post retornado pelo server (que tem o ID real do MongoDB)
       setPosts([savedPost, ...posts].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)))
       setNewPostContent('')
-      setNewPostImage(null)
+      setMediaList([])
       setActiveMenuPostId(null)
     } catch (error) {
       console.error('Erro ao publicar:', error)
@@ -697,9 +698,9 @@ function App() {
               user={user}
               newPostContent={newPostContent}
               setNewPostContent={setNewPostContent}
-              newPostImage={newPostImage}
-              setNewPostImage={setNewPostImage}
-              handlePostImageChange={handlePostImageChange}
+              mediaList={mediaList}
+              setMediaList={setMediaList}
+              handleMediaChange={handleMediaChange}
               createPost={createPost}
             />
 
