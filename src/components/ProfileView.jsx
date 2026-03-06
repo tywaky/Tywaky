@@ -12,6 +12,7 @@ const ProfileView = ({
     requestDeletePost,
     toggleLike,
     setCommentModal,
+    PostComponent,
     openEditModal,
     handleDeleteComment,
     handleFollow,
