@@ -19,7 +19,9 @@ const postSchema = new mongoose.Schema({
     likedBy: [{ type: String }],
     comments: [commentSchema],
     time: { type: String, default: "Agora" },
-    isPinned: { type: Boolean, default: false }
+    isPinned: { type: Boolean, default: false },
+    isRepost: { type: Boolean, default: false },
+    originalPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Post', postSchema);

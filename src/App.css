@@ -904,3 +904,18 @@
 .notification-item {
   animation: notificationIn 0.3s ease-out forwards;
 }
+
+/* Repost Styles */
+.repost-card {
+  border-left: 3px solid var(--primary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.repost-header {
+  color: var(--primary) !important;
+}
+
+.repost-header strong {
+  color: white;
+  margin-right: 4px;
+}

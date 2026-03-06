@@ -504,7 +504,12 @@ app.post('/api/user/:id/unfollow', async (req, res) => {
 // Posts
 app.get('/api/posts', async (req, res) => {
     try {
-        const posts = await Post.find().sort({ isPinned: -1, createdAt: -1 });
+        const posts = await Post.find()
+            .populate({
+                path: 'originalPostId',
+                populate: { path: 'userId', select: 'name handle avatarUrl' } // Opcional, dependendo da estrutura
+            })
+            .sort({ isPinned: -1, createdAt: -1 });
         res.json(posts);
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -530,6 +535,43 @@ app.post('/api/posts', async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 });
+
+app.post('/api/posts/:id/repost', async (req, res) => {
+    const { id: originalPostId } = req.params;
+    const { userId, user, handle, avatar } = req.body;
+
+    try {
+        const originalPost = await Post.findById(originalPostId);
+        if (!originalPost) return res.status(404).json({ success: false, message: 'Post original não encontrado' });
+
+        const repost = new Post({
+            userId,
+            user,
+            handle,
+            avatar,
+            content: originalPost.content,
+            imageUrl: originalPost.imageUrl,
+            isRepost: true,
+            originalPostId: originalPost._id,
+            time: 'Agora'
+        });
+
+        await repost.save();
+
+        if (String(originalPost.userId) !== String(userId)) {
+            await sendNotification(originalPost.userId, userId, 'repost', originalPost._id);
+        }
+
+        const repostWithOriginal = await Post.findById(repost._id).populate('originalPostId');
+        io.emit('post_created', repostWithOriginal);
+
+        res.status(201).json(repostWithOriginal);
+    } catch (error) {
+        console.error('Erro ao Re-postar:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 
 // Like/Unlike Toggle
 app.post('/api/posts/:id/like', async (req, res) => {

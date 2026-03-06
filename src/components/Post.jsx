@@ -11,13 +11,29 @@ const Post = ({
     toggleLike,
     setCommentModal,
     handleDeleteComment,
-    handleViewProfile
+    handleViewProfile,
+    handleRepost
 }) => {
     const isLiked = post.likedBy?.includes(currentUser?._id || currentUser?.id);
     const isOwner = currentUser && (String(post.userId) === String(currentUser._id || currentUser.id) || post.handle === currentUser.handle);
 
     return (
-        <article className="post-card glass">
+        <article className={`post-card glass ${post.isRepost ? 'repost-card' : ''}`}>
+            {post.isRepost && (
+                <div className="repost-header" style={{
+                    fontSize: '0.8rem',
+                    color: 'var(--text-muted)',
+                    marginBottom: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    paddingBottom: '0.5rem'
+                }}>
+                    <span>👤</span>
+                    <strong>{post.user}</strong> partilhou isto
+                </div>
+            )}
             <div className="post-header">
                 <div
                     className="post-user"
@@ -99,19 +115,16 @@ const Post = ({
                     setCommentModal({ isOpen: true, postId: post._id || post.id, content: '' });
                 }}>💬 {post.comments && typeof post.comments === 'object' ? post.comments.length : (post.comments || 0)}</button>
                 <button className="stat-item" onClick={() => {
-                    const postUrl = `${window.location.origin}/profile/${post.handle.replace('@', '')}/post/${post._id || post.id}`;
-                    navigator.clipboard.writeText(postUrl).then(() => {
-                        const btn = document.getElementById(`share-btn-${post._id || post.id}`);
-                        if (btn) {
-                            const originalText = btn.innerHTML;
-                            btn.innerHTML = '✅ Copiado!';
-                            btn.classList.add('active');
-                            setTimeout(() => {
-                                btn.innerHTML = originalText;
-                                btn.classList.remove('active');
-                            }, 2000);
-                        }
-                    });
+                    handleRepost(post._id || post.id);
+                    const btn = document.getElementById(`share-btn-${post._id || post.id}`);
+                    if (btn) {
+                        btn.innerHTML = '✅ Partilhado!';
+                        btn.classList.add('active');
+                        setTimeout(() => {
+                            btn.innerHTML = '🚀 Partilhar';
+                            btn.classList.remove('active');
+                        }, 2000);
+                    }
                 }} id={`share-btn-${post._id || post.id}`}>🚀 Partilhar</button>
             </div>
 

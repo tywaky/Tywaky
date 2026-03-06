@@ -420,6 +420,20 @@ function App() {
     }
   };
 
+  const handleRepost = async (postId) => {
+    try {
+      await apiClient.post(`/posts/${postId}/repost`, {
+        userId: user._id || user.id,
+        user: user.name,
+        handle: user.handle,
+        avatar: user.avatarUrl
+      });
+      // O socket 'post_created' tratará de adicionar ao feed para todos
+    } catch (err) {
+      console.error('Erro ao re-postar:', err);
+    }
+  };
+
   const openEditModal = () => {
     setEditData({
       name: user.name,
@@ -730,6 +744,7 @@ function App() {
                         setCommentModal={setCommentModal}
                         handleDeleteComment={handleDeleteComment}
                         handleViewProfile={handleViewProfile}
+                        handleRepost={handleRepost}
                       />
                     );
                   })
@@ -783,6 +798,7 @@ function App() {
             handleFollow={handleFollow}
             handleUnfollow={handleUnfollow}
             handleViewProfile={handleViewProfile}
+            handleRepost={handleRepost}
           />
         )}
       </main>
