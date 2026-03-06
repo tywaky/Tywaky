@@ -357,13 +357,28 @@ A rede social opera agora num modelo de **Cloud Distribuída e Automática**:
 
 ---
 
-## 🌍 Estrutura Final do Ecossistema (Tywaky v6.0)
+## 🚀 Fase 18: Re-Post (Smart Share)
+
+A funcionalidade de "Partilhar" foi reinventada para permitir a republicação real de conteúdos, aumentando a viralidade e interação dentro da rede.
+
+### 18.1 Lógica de Republicação
+
+- **Repost Document:** Implementação de uma estrutura de posts que referenciam o conteúdo original sem o duplicar desnecessariamente.
+- **Crédito Automático:** Interface que identifica claramente quem partilhou o conteúdo: *"👤 [Nome] partilhou isto"*.
+
+### 18.2 Notificações de Viralidade
+
+- **Alerta de Re-Post:** Quando um utilizador partilha um post, o autor original recebe uma notificação instantânea via WebSocket.
+
+---
+
+## 🌍 Estrutura Final do Ecossistema (Tywaky v6.5)
 
 A Tywaky atingiu a maturidade técnica total com uma arquitetura **Event-Driven**:
 
-1. **Backend Reativo:** Servidor Node.js agora opera como um hub de eventos em tempo real.
-2. **Frontend Inteligente:** Otimizado para ouvir e reagir a mudanças de estado globais instantaneamente.
-3. **UX Instantânea:** Interação social sem barreiras de carregamento, tornando a experiência comparável às maiores redes sociais do mundo.
+1. **Backend Reativo:** Servidor Node.js opera como um hub de eventos em tempo real com Socket.io.
+2. **Distribuição Viral:** Sistema de Re-Post integrado que permite a propagação orgânica de conteúdos.
+3. **UX Social:** Interação multi-dimensional (likes, comments, shares, follows) com feedback visual premium e instantâneo.
 
 ---
-*Documento atualizado em 2026-03-06 10:30:00*
+*Documento atualizado em 2026-03-06 10:50:00*
