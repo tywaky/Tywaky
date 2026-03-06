@@ -38,11 +38,20 @@ const ProfileView = ({
             </header>
 
             <div className="profile-info glass" style={{ padding: '2rem', marginTop: '-2rem', position: 'relative', zIndex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <h2 style={{ margin: 0 }}>{user?.name}</h2>
                         <span style={{ color: 'var(--text-muted)' }}>{user?.handle}</span>
                     </div>
+
+                    {/* Bio Ticker */}
+                    <div className="ticker-mini">
+                        <div className="ticker-label">SOBRE</div>
+                        <div className="ticker-content">
+                            {user?.bio} &nbsp;&bull;&nbsp; {user?.bio} &nbsp;&bull;&nbsp; {user?.bio}
+                        </div>
+                    </div>
+
                     {effectiveIsOwnProfile ? (
                         <button onClick={openEditModal} className="tool-btn" style={{ border: '1px solid var(--glass-border)', padding: '0.6rem 1.5rem', borderRadius: '12px' }}>Editar Perfil</button>
                     ) : (
@@ -73,8 +82,6 @@ const ProfileView = ({
                         </div>
                     )}
                 </div>
-
-                <p style={{ margin: '1.5rem 0', lineHeight: 1.6, maxWidth: '600px' }}>{user?.bio}</p>
 
                 <div style={{ display: 'flex', gap: '2rem', marginBottom: '3rem' }}>
                     <div className="stat-badges">
