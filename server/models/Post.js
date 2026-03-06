@@ -15,17 +15,26 @@ const postSchema = new mongoose.Schema({
     avatar: { type: String },
     content: { type: String },
     imageUrl: { type: String },
-    likes: { type: Number, default: 0 },
-    likedBy: [{ type: String }],
+    media: [
+        {
+            type: { type: String, enum: ['image', 'video'] },
+            url: String
+        }
+    ],
+    reactions: {
+        like: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        love: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        care: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        haha: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        wow: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        sad: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        angry: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    },
     comments: [commentSchema],
     time: { type: String, default: "Agora" },
     isPinned: { type: Boolean, default: false },
     isRepost: { type: Boolean, default: false },
-    originalPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', default: null },
-    media: [{
-        type: { type: String, enum: ['image', 'video'], default: 'image' },
-        url: { type: String, required: true }
-    }]
+    originalPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', default: null }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Post', postSchema);

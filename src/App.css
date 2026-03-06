@@ -388,6 +388,21 @@
   /* Slight shift to match profile view left alignment better */
 }
 
+.post-card {
+  position: relative;
+  overflow: visible !important;
+  /* Ensure reactions are visible */
+}
+
+.post-stats {
+  overflow: visible !important;
+}
+
+.like-button-wrapper {
+  position: relative;
+  overflow: visible !important;
+}
+
 .mini-info {
   padding-bottom: 0.5rem;
 }
@@ -501,6 +516,95 @@
   z-index: 50;
   /* Ensure it stays on top */
   box-shadow: 15px 0 25px rgba(0, 0, 0, 0.4);
+}
+
+/* REACTION PICKER */
+.reaction-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  padding: 8px 12px;
+  display: flex;
+  gap: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  margin-bottom: 10px;
+  animation: bounceIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.reaction-icon-wrapper {
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.reaction-icon-wrapper:hover {
+  transform: scale(1.4) translateY(-10px);
+}
+
+.reaction-icon-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.reaction-label {
+  position: absolute;
+  bottom: -20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.reaction-icon-wrapper:hover .reaction-label {
+  opacity: 1;
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+
+  70% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.reaction-summary {
+  cursor: pointer;
+}
+
+.reaction-summary:hover {
+  text-decoration: underline;
+}
+
+.post-stats .stat-item.active {
+  color: var(--primary);
+  transform: none;
+  /* Evitar conflito com animação */
+}
+
+/* Animations for icons in stats */
+.reaction-icons-stack img {
+  box-sizing: content-box;
 }
 
 .ticker-content {

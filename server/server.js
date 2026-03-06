@@ -575,34 +575,63 @@ app.post('/api/posts/:id/repost', async (req, res) => {
     }
 });
 
-
-// Like/Unlike Toggle
-app.post('/api/posts/:id/like', async (req, res) => {
-    const { id } = req.params;
-    const { userId } = req.body;
+// Reagir a um post (ou remover reação)
+app.post('/api/posts/:id/react', async (req, res) => {
     try {
-        const post = await Post.findById(id);
+        const { reactionType = 'like' } = req.body;
+        const post = await Post.findById(req.params.id);
         if (!post) return res.status(404).json({ success: false, message: 'Post não encontrado' });
 
-        const likedIndex = post.likedBy.indexOf(String(userId));
-        if (likedIndex === -1) {
-            post.likedBy.push(String(userId));
-            post.likes += 1;
-        } else {
-            post.likedBy.splice(likedIndex, 1);
-            post.likes = Math.max(0, post.likes - 1);
+        const userId = req.body.userId; // No mundo real seria do JWT
+        if (!userId) return res.status(401).json({ success: false, message: 'Não autorizado' });
+
+        // Inicializar objeto de reações se não existir (migração)
+        if (!post.reactions) {
+            post.reactions = { like: [], love: [], care: [], haha: [], wow: [], sad: [], angry: [] };
+        }
+
+        // Remover qualquer reação anterior deste utilizador neste post
+        let removed = false;
+        let sameReaction = false;
+
+        for (const type in post.reactions) {
+            const index = post.reactions[type].indexOf(userId);
+            if (index > -1) {
+                post.reactions[type].splice(index, 1);
+                removed = true;
+                if (type === reactionType) sameReaction = true;
+            }
+        }
+
+        // Se não for a mesma reação, adicionamos a nova
+        if (!sameReaction) {
+            if (!post.reactions[reactionType]) post.reactions[reactionType] = [];
+            post.reactions[reactionType].push(userId);
         }
 
         await post.save();
 
-        // Notificar se foi um Like (não notifica se for deslike por agora para manter simples)
-        if (likedIndex === -1) {
-            await sendNotification(post.userId, userId, 'like', post._id);
+        // Notificação (apenas se for uma nova reação)
+        if (!sameReaction && String(post.userId) !== String(userId)) {
+            const reactor = await User.findById(userId);
+            const newNotif = new Notification({
+                userId: post.userId,
+                fromUserId: userId,
+                fromUserName: reactor?.name || 'Alguém',
+                type: 'like', // Mantemos 'like' no tipo de notificação por agora para compatibilidade
+                postId: post._id,
+                read: false
+            });
+            await newNotif.save();
+            const targetSocketId = onlineUsers.get(String(post.userId));
+            if (targetSocketId) {
+                io.to(targetSocketId).emit('new_notification', newNotif);
+            }
         }
 
-        res.json({ success: true, likes: post.likes, liked: likedIndex === -1 });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        res.json({ success: true, reactions: post.reactions });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 

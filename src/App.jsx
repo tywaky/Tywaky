@@ -428,29 +428,23 @@ function App() {
     }
   };
 
-  const toggleLike = async (postId) => {
-    // Optimistic Update
-    const originalPosts = [...posts];
-    setPosts(posts.map(p => {
-      const pid = p._id || p.id;
-      if (pid === postId) {
-        const isCurrentlyLiked = p.likedBy?.includes(user._id || user.id);
-        return {
-          ...p,
-          likes: isCurrentlyLiked ? Math.max(0, p.likes - 1) : p.likes + 1,
-          likedBy: isCurrentlyLiked
-            ? p.likedBy.filter(id => id !== (user._id || user.id))
-            : [...(p.likedBy || []), (user._id || user.id)]
-        };
-      }
-      return p;
-    }));
-
+  const toggleLike = async (postId, reactionType = 'like') => {
     try {
-      await apiClient.post(`/posts/${postId}/like`, { userId: user._id || user.id });
-    } catch (err) {
-      console.error('Erro ao curtir:', err);
-      setPosts(originalPosts); // Rollback on error
+      const response = await apiClient.post(`/posts/${postId}/react`, {
+        userId: user._id || user.id,
+        reactionType
+      });
+
+      const { reactions } = response;
+
+      setPosts(prevPosts => prevPosts.map(p => {
+        if (String(p._id || p.id) === String(postId)) {
+          return { ...p, reactions };
+        }
+        return p;
+      }));
+    } catch (error) {
+      console.error('Erro ao reagir:', error);
     }
   };
 
@@ -462,7 +456,6 @@ function App() {
         handle: user.handle,
         avatar: user.avatarUrl
       });
-      // O socket 'post_created' tratará de adicionar ao feed para todos
     } catch (err) {
       console.error('Erro ao re-postar:', err);
     }
@@ -489,10 +482,9 @@ function App() {
       await apiClient.delete(`/posts/${postId}`, { userId: user._id || user.id })
       setPosts(prevPosts => prevPosts.filter(p => String(p._id || p.id) !== String(postId)))
       setConfirmModal({ isOpen: false, postId: null })
-      // Pequeno feedback visual opcional ou apenas fechar o modal
     } catch (err) {
       console.error('Erro ao eliminar post:', err)
-      alert('Erro ao eliminar a publicação. Estás a usar a versão mais recente?')
+      alert('Erro ao eliminar a publicação.')
     }
   }
 
@@ -501,15 +493,13 @@ function App() {
     const newPinStatus = !post.isPinned
     try {
       await apiClient.put(`/posts/${postId}`, { isPinned: newPinStatus })
-      const updatedPosts = posts.map(p =>
+      setPosts(prevPosts => prevPosts.map(p =>
         String(p._id || p.id) === String(postId) ? { ...p, isPinned: newPinStatus } : p
-      ).sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
-      setPosts(updatedPosts)
-      setActiveMenuPostId(null)
+      ).sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)))
     } catch (err) {
       console.error('Erro ao fixar post:', err)
     }
-  }
+  };
 
   const handleEditPost = (post) => {
     setEditingPost({ ...post })

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ReactionPicker, { reactions } from './ReactionPicker';
 
 const Post = ({
     post,
@@ -14,8 +15,40 @@ const Post = ({
     handleViewProfile,
     handleRepost
 }) => {
-    const isLiked = post.likedBy?.includes(currentUser?._id || currentUser?.id);
     const isOwner = currentUser && (String(post.userId) === String(currentUser._id || currentUser.id) || post.handle === currentUser.handle);
+    const [showReactions, setShowReactions] = useState(false);
+
+    // Encontrar qual a reação do usuário atual
+    const getUserReaction = () => {
+        if (!post.reactions) return null;
+        for (const type in post.reactions) {
+            if (post.reactions[type].includes(currentUser?._id || currentUser?.id)) {
+                return type;
+            }
+        }
+        return null;
+    };
+
+    const userReaction = getUserReaction();
+
+    const handleReactionSelect = (type) => {
+        toggleLike(post._id || post.id, type);
+        setShowReactions(false);
+    };
+
+    const getTotalReactions = () => {
+        if (!post.reactions) return 0;
+        return Object.values(post.reactions).reduce((acc, current) => acc + current.length, 0);
+    };
+
+    const getTopReactions = () => {
+        if (!post.reactions) return [];
+        return Object.entries(post.reactions)
+            .filter(([, users]) => users.length > 0)
+            .sort((a, b) => b[1].length - a[1].length)
+            .slice(0, 3)
+            .map(([type]) => reactions.find(r => r.type === type));
+    };
 
     // Função para detetar e transformar hashtags em spans clicáveis
     const renderContentWithHashtags = (content) => {
@@ -183,13 +216,58 @@ const Post = ({
                 )}
             </div>
             <div className="post-stats">
-                <button
-                    onClick={() => toggleLike(post._id || post.id)}
-                    className={`stat-item ${isLiked ? 'active' : ''}`}
-                    style={{ color: isLiked ? 'var(--accent)' : '' }}
-                >
-                    {isLiked ? '❤️' : '🤍'} {post.likes}
-                </button>
+                <div className="stats-left" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div
+                        className="like-button-wrapper"
+                        onMouseEnter={() => setShowReactions(true)}
+                        onMouseLeave={() => setShowReactions(false)}
+                        style={{ position: 'relative' }}
+                    >
+                        <button
+                            onClick={() => handleReactionSelect(userReaction || 'like')}
+                            className={`stat-item ${userReaction ? 'active' : ''}`}
+                            style={{
+                                color: userReaction ? 'var(--primary)' : '',
+                                fontWeight: userReaction ? 'bold' : 'normal',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.3rem'
+                            }}
+                        >
+                            {userReaction ? (
+                                <img src={reactions.find(r => r.type === userReaction)?.icon} alt={userReaction} style={{ width: '18px', height: '18px' }} />
+                            ) : '🤍'}
+                            <span>{userReaction ? reactions.find(r => r.type === userReaction)?.label : 'Gosto'}</span>
+                        </button>
+
+                        {showReactions && (
+                            <ReactionPicker onSelect={handleReactionSelect} onClose={() => setShowReactions(false)} />
+                        )}
+                    </div>
+
+                    {getTotalReactions() > 0 && (
+                        <div className="reaction-summary" style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '0.5rem' }}>
+                            <div className="reaction-icons-stack" style={{ display: 'flex', alignItems: 'center' }}>
+                                {getTopReactions().map((r, i) => (
+                                    <img
+                                        key={r.type}
+                                        src={r.icon}
+                                        alt={r.type}
+                                        style={{
+                                            width: '16px',
+                                            height: '16px',
+                                            borderRadius: '50%',
+                                            border: '2px solid var(--bg-dark)',
+                                            marginLeft: i === 0 ? 0 : '-6px',
+                                            zIndex: 5 - i
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '4px' }}>{getTotalReactions()}</span>
+                        </div>
+                    )}
+                </div>
                 <button className="stat-item" onClick={() => {
                     setCommentModal({ isOpen: true, postId: post._id || post.id, content: '' });
                 }}>💬 {post.comments && typeof post.comments === 'object' ? post.comments.length : (post.comments || 0)}</button>
