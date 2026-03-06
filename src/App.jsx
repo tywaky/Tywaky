@@ -9,7 +9,6 @@ import ProfileView from './components/ProfileView'
 import Modals from './components/Modals'
 import AdminPanel from './components/AdminPanel'
 import RightSidebar from './components/RightSidebar'
-import FloatingChat from './components/FloatingChat'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -729,6 +728,7 @@ function App() {
         setCurrentView={setCurrentView}
         handleViewProfile={handleViewProfile}
         setActiveChatUser={setActiveChatUser}
+        activeChatUser={activeChatUser}
       />
 
       <Modals
@@ -748,16 +748,9 @@ function App() {
         setCommentModal={setCommentModal}
         handleAddComment={handleAddComment}
       />
-
-      {activeChatUser && (
-        <FloatingChat
-          currentUser={user}
-          chatUser={activeChatUser}
-          onClose={() => setActiveChatUser(null)}
-        />
-      )}
     </div>
   )
 }
 
 export default App
+  ```

@@ -1,6 +1,7 @@
 import React from 'react';
+import FloatingChat from './FloatingChat';
 
-const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser }) => {
+const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser, activeChatUser }) => {
     // Lista de contactos: pessoas que o utilizador segue ou seguidores
     const contacts = allUsers.filter(u =>
         u._id !== (currentUser?._id || currentUser?.id) &&
@@ -112,6 +113,23 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser
             <div style={{ padding: '1rem', fontSize: '0.65rem', opacity: 0.3, textAlign: 'center' }}>
                 Messenger v1.2
             </div>
+
+            {/* Chat Flutuante alinhado perfeitamente com a sidebar */}
+            {activeChatUser && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '1rem',
+                    right: '1rem',
+                    zIndex: 1000
+                }}>
+                    <FloatingChat
+                        currentUser={currentUser}
+                        chatUser={activeChatUser}
+                        onClose={() => setActiveChatUser(null)}
+                    />
+                </div>
+            )}
         </aside>
     );
 };

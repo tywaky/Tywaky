@@ -57,12 +57,8 @@ const FloatingChat = ({ currentUser, chatUser, onClose }) => {
 
     return (
         <div className="floating-chat-window glass" style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '325px', // Alinhado com o RightSidebar
-            width: '320px',
-            height: '450px',
-            zIndex: 1000,
+            width: '100%',
+            height: '400px',
             display: 'flex',
             flexDirection: 'column',
             animation: 'slideUp 0.3s ease-out',
