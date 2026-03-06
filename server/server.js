@@ -594,12 +594,15 @@ app.post('/api/posts/:id/react', async (req, res) => {
         let removed = false;
         let sameReaction = false;
 
-        for (const type in post.reactions) {
-            const index = post.reactions[type].indexOf(userId);
-            if (index > -1) {
-                post.reactions[type].splice(index, 1);
-                removed = true;
-                if (type === reactionType) sameReaction = true;
+        const reactionTypes = ['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry'];
+        for (const type of reactionTypes) {
+            if (post.reactions[type] && Array.isArray(post.reactions[type])) {
+                const index = post.reactions[type].indexOf(userId);
+                if (index > -1) {
+                    post.reactions[type].splice(index, 1);
+                    removed = true;
+                    if (type === reactionType) sameReaction = true;
+                }
             }
         }
 
