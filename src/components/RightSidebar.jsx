@@ -1,7 +1,7 @@
 import React from 'react';
 import FloatingChat from './FloatingChat';
 
-const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser, activeChatUser }) => {
+const RightSidebar = ({ currentUser, allUsers, setActiveChatUser, activeChatUser }) => {
     // Lista de contactos: pessoas que o utilizador segue ou seguidores
     const contacts = allUsers.filter(u =>
         u._id !== (currentUser?._id || currentUser?.id) &&
@@ -11,9 +11,10 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser
     return (
         <aside className="right-sidebar" style={{
             display: 'flex',
-            flexDirection: 'column',
-            paddingTop: '30vh' // Alinha com o "quadrado vermelho" do desenho
+            flexDirection: 'column'
         }}>
+
+            <div style={{ height: '18vh', flexShrink: 0 }}></div> {/* Spacer para alinhar verticalmente sem partir o layout Flex */}
 
             {/* Espaço para Publicidade (Lugar reservado) */}
             <div style={{
@@ -114,14 +115,15 @@ const RightSidebar = ({ currentUser, allUsers, setCurrentView, setActiveChatUser
                 Messenger v1.2
             </div>
 
-            {/* Chat Flutuante alinhado perfeitamente com a sidebar */}
+            {/* Espaçador flexível para empurrar a janela para o fundo da sidebar */}
+            <div style={{ flex: 1 }}></div>
+
+            {/* Chat Flutuante no Fluxo Normal (Garante margens e larguras idênticas à contacts-box) */}
             {activeChatUser && (
                 <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: '1rem',
-                    right: '1rem',
-                    zIndex: 1000
+                    margin: '0 1rem', // Exatamente a mesma margem descrita na contacts-box
+                    marginBottom: '1rem',
+                    flexShrink: 0
                 }}>
                     <FloatingChat
                         currentUser={currentUser}
