@@ -323,6 +323,12 @@ A rede social opera agora num modelo de **Cloud Distribuída e Automática**:
 - **Slide-Up Animation:** Transição suave de entrada e saída das janelas de chat.
 - **Notificações Subtis:** Feedback visual integrado para novas mensagens e estados de envio.
 
+### 16.4 Refinamento Profundo e Alinhamento (Pixel-Perfect)
+
+- **Flexbox Flow:** Transição da janela de chat flutuante de `position: fixed` para dentro do fluxo normal (Flexbox) da `RightSidebar`, garantindo um alinhamento matemático e exato (margins idênticas) por baixo da lista de contactos, indiferente à largura do monitor.
+- **Prevenção de Crashes (Profile Fix):** Correção rigorosa no encaminhamento de *props* na `ProfileView.jsx` (recuperação da prop `PostComponent`) que causava travamentos totais ao carregar visualizações de perfis de utilizadores.
+- **Minimalismo no Feed:** Remoção definitiva da caixa de texto estática ("Bio") que criava ruído no card de perfil principal do utilizador (em `App.jsx`), redirecionando a atenção para o painel dinâmico em *ticker* criado anteriormente.
+
 ---
 
 ## 🌍 Estrutura Final do Ecossistema (Tywaky v5.0)
